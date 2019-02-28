@@ -1,5 +1,13 @@
 {
   "devDependencies": {
+    "cssnano": "^4.1.10",
     "sass": "^1.17.2"
+  },
+  "scripts": {
+    "deploy": "npm run gh-pages",
+    "gh-pages": "gh-pages -d dist -b gh-pages"
+  },
+  "dependencies": {
+    "gh-pages": "^2.0.1"
   }
 }
