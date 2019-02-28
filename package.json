@@ -8,6 +8,7 @@
     "gh-pages": "gh-pages -d dist -b gh-pages"
   },
   "dependencies": {
+    "babel-polyfill": "^6.26.0",
     "gh-pages": "^2.0.1"
   }
 }
