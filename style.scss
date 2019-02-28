@@ -131,12 +131,12 @@ h1, h2, h3 {
     }
 
     &__item {
-
+        position: relative;
+        padding: 10px;
         &.readme {
             cursor: help;
         }
         border: 1px solid black;
-        padding: 20px;
     }
 
 
@@ -184,5 +184,31 @@ form {
         font-size: 200px;
         margin: 0px;
         padding: 1px;
+    }
+}
+
+.project {
+    &--title {
+
+    }
+
+    &--meta {
+        font-family: 'Courier New', Courier, monospace;
+        display: flex !important;
+        list-style-type: none;
+        padding: 0px 5px;
+        margin: 0;
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+
+        li {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            &:not(:first-child) {
+                margin-left: 10px;
+            }
+        }
     }
 }
