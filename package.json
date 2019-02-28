@@ -9,6 +9,11 @@
   },
   "dependencies": {
     "babel-polyfill": "^6.26.0",
-    "gh-pages": "^2.0.1"
+    "gh-pages": "^2.0.1",
+    "parcel-plugin-static-files-copy": "^2.0.0"
+  },
+  "staticFiles": {
+    "staticPath": "public",
+    "watcherGlob": "**"
   }
 }
