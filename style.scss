@@ -1,7 +1,7 @@
 $yellow: #f3cd05;
 
 html, body {
-    font-family: 'Arial', sans-serif;
+    font-family: 'San Francisco', 'Arial', sans-serif;
     padding: 0px;
     margin: 0px;
 }
@@ -17,6 +17,14 @@ section {
 .footer {
     font-size: 12px;
     text-align: center;
+}
+
+.markdown {
+    word-break: break-all;
+    overflow-wrap: break-word;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 11px;
+    white-space: pre-wrap;
 }
 
 .box {
@@ -111,19 +119,34 @@ h1, h2, h3 {
 .grid {
 
     margin: auto;
-    padding: 50px;
+    padding: 3px;
 
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     grid-gap: 3px;
     grid-auto-rows: minmax(100px, auto);
 
+    @media screen and (max-width: 700px) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
     &__item {
+
+        &.readme {
+            cursor: help;
+        }
         border: 1px solid black;
         padding: 20px;
     }
 
 
+}
+
+.modalTemplate {
+    position: absolute;
+    width: 400px;
+    background-color: white;
+    pointer-events: none;
 }
 
 form {
