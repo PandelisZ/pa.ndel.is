@@ -1,60 +1,233 @@
+// BRUTALIST DESIGN SYSTEM
+// Raw aesthetics, exposed structure, system fonts
+
+// COLORS - High contrast palette
 $yellow: #f3cd05;
+$black: #000000;
+$white: #ffffff;
+$gray: #888888;
+$off-white: #f5f5f5;
+
+// SYSTEM FONT STACK - No fancy typography
+$font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+$font-mono: "Courier New", Courier, "Lucida Console", monospace;
+
+// NOISE TEXTURE - SVG data URI for grain overlay
+$noise-texture: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+
+// RESET & BASE
+*, *::before, *::after {
+    box-sizing: border-box;
+}
 
 html, body {
-    font-family: 'San Francisco', 'Arial', sans-serif;
-    padding: 0px;
-    margin: 0px;
+    font-family: $font-mono;
+    padding: 0;
+    margin: 0;
+    background-color: $white;
+    color: $black;
+    line-height: 1.1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
+// NOISE OVERLAY - Applied globally
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: $noise-texture;
+    opacity: 0.03;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+// SECTIONS - Exposed with borders
 section {
-
+    border-bottom: 2px solid $black;
+    position: relative;
 }
 
+// GRID LINES - Visible structure overlay
+.grid-lines {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 1;
+    background-image: 
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 99px,
+            rgba($black, 0.08) 99px,
+            rgba($black, 0.08) 100px
+        ),
+        repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 99px,
+            rgba($black, 0.08) 99px,
+            rgba($black, 0.08) 100px
+        );
+}
+
+// TYPOGRAPHY - Aggressive, oversized
+h1, h2, h3, h4 {
+    padding: 0;
+    margin: 0;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+}
+
+h1 {
+    font-size: clamp(80px, 15vw, 200px);
+    line-height: 0.85;
+}
+
+h2 {
+    font-size: clamp(40px, 8vw, 100px);
+    line-height: 0.9;
+}
+
+h3 {
+    font-size: clamp(24px, 4vw, 48px);
+    line-height: 1;
+}
+
+// REFERENCE NUMBERS - Technical element
+.ref-num {
+    font-family: $font-mono;
+    font-size: 11px;
+    color: $gray;
+    &::before {
+        content: '[';
+    }
+    &::after {
+        content: ']';
+    }
+}
+
+// CORNER BRACKETS - Technical decoration
+.corner-bracket {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid $black;
+    
+    &.tl { top: -2px; left: -2px; border-right: 0; border-bottom: 0; }
+    &.tr { top: -2px; right: -2px; border-left: 0; border-bottom: 0; }
+    &.bl { bottom: -2px; left: -2px; border-right: 0; border-top: 0; }
+    &.br { bottom: -2px; right: -2px; border-left: 0; border-top: 0; }
+}
+
+// CONTENT SECTIONS
 .content {
     min-height: 100vh;
+    position: relative;
 }
 
+// FOOTER - Raw, small text
 .footer {
-    font-size: 12px;
-    text-align: center;
+    font-size: 10px;
+    font-family: $font-mono;
+    text-align: left;
+    padding: 20px;
+    border-top: 2px solid $black;
+    background-color: $off-white;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
+// MARKDOWN - Raw monospace
 .markdown {
     word-break: break-all;
     overflow-wrap: break-word;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: $font-mono;
     font-size: 11px;
     white-space: pre-wrap;
+    line-height: 1.4;
 }
 
+// BOX - Contained elements with heavy borders
 .box {
-    border: 1px solid black;
+    border: 2px solid $black;
+    position: relative;
 }
 
-.title {
-    background-color: black;
-    color: white;
-    text-transform: uppercase;
-    font-size: 200px;
-    overflow-x: hidden;
-    white-space:nowrap;
+// LINKS - Raw, underlined, aggressive
+a {
+    color: $black;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: all 0.1s ease;
+    
+    &:hover {
+        text-decoration: line-through;
+        background-color: $yellow;
+    }
+}
 
+// TITLE SECTIONS - Black background, oversized nav
+.title {
+    background-color: $black;
+    color: $white;
+    text-transform: uppercase;
+    overflow-x: hidden;
+    white-space: nowrap;
+    border-bottom: 2px solid $black;
+    position: relative;
+    padding: 40px 20px;
+    
+    // Section reference number
+    &::before {
+        content: attr(data-section);
+        position: absolute;
+        top: 10px;
+        left: 20px;
+        font-family: $font-mono;
+        font-size: 11px;
+        color: $gray;
+    }
+    
+    h1 {
+        font-size: clamp(60px, 12vw, 180px);
+        display: inline-block;
+        transform: translateX(var(--offset, 0));
+    }
+    
     .nav {
+        display: none;
+        
         h2 {
             width: 100%;
-            font-size: 100px;
+            font-size: clamp(40px, 6vw, 80px);
+            line-height: 1;
+            margin: 10px 0;
         }
-
+        
         a {
             text-decoration: none;
-            color: white;
+            color: $white;
+            display: inline-block;
+            padding: 0 10px;
+            border: 2px solid transparent;
+            
             &:hover {
-                background-color: white;
-                color: black;
+                background-color: $yellow;
+                color: $black;
+                text-decoration: none;
+                border-color: $black;
             }
         }
     }
-
+    
     &:hover {
         h1 {
             display: none;
@@ -63,35 +236,57 @@ section {
             display: block !important;
         }
     }
-
-    &#profile>h1 {
-        padding-left: 600px;
+    
+    &#profile {
+        --offset: 50px;
     }
-
-    &#projects>h1 {
-        padding-left: 2000px;
+    
+    &#projects {
+        --offset: 200px;
     }
-
-    &#social>h1 {
-        padding-left: 6800px;
+    
+    &#social {
+        --offset: 400px;
     }
 }
 
+// PROFILE SECTION - High contrast white
 .profile {
-    margin: 100px auto 100px auto;
-    width: 500px;
-    font-size: 30px;
-    padding: 40px;
-}
-
-h1, h2, h3 {
-    padding: 0;
     margin: 0;
-    font-weight: normal;
+    width: 100%;
+    max-width: 800px;
+    font-size: 18px;
+    padding: 60px 40px;
+    line-height: 1.4;
+    background-color: $white;
+    
+    p {
+        margin: 0 0 20px 0;
+    }
+    
+    // Editable visitor name
+    .visitorName {
+        border-bottom: 2px solid $black;
+        padding: 0 5px;
+        outline: none;
+        background-color: $yellow;
+        
+        &:focus {
+            background-color: $black;
+            color: $white;
+        }
+    }
 }
 
-.project-category {
-    text-align: center;
+// HERO SECTION - WebGL preserved
+#hero-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
 }
 
 .blade {
@@ -99,120 +294,313 @@ h1, h2, h3 {
     width: 100vw;
     height: 100vh;
     position: relative;
+    overflow: hidden;
+    
     &__overflow {
         overflow: hidden;
     }
+    
     h1 {
-        font-size: 300px;
-        width: 4000px;
+        font-size: clamp(60px, 10vw, 140px);
+        width: auto;
+        line-height: 0.85;
+        color: $black;
     }
+    
     &--left {
-        padding-left: 100px;
-        transform: rotate(-45deg)
+        padding-left: 5vw;
+        transform: rotate(-15deg) translateY(-10vh);
+        z-index: 1;
+        position: relative;
+        margin-top: 20vh;
     }
+    
     &--right {
-        transform: rotate(-45deg) translateX(-200px);
+        transform: rotate(-15deg) translateX(10vw);
+        z-index: 1;
+        position: relative;
+        margin-top: 5vh;
+        text-align: right;
+        padding-right: 5vw;
     }
 }
 
+// HERO BORDERS - Decorative frame
+.hero-border {
+    position: absolute;
+    background-color: $black;
+    z-index: 2;
+    
+    &.top, &.bottom {
+        height: 20px;
+        width: 100%;
+        left: 0;
+    }
+    
+    &.left, &.right {
+        width: 20px;
+        height: 100%;
+        top: 0;
+    }
+    
+    &.top { top: 0; }
+    &.bottom { bottom: 0; }
+    &.left { left: 0; }
+    &.right { right: 0; }
+}
 
+.hero-text {
+    color: $black;
+    text-shadow: 4px 4px 0 $white;
+}
+
+.hero-text-secondary {
+    color: $black;
+    text-shadow: -4px -4px 0 $white;
+    opacity: 0.9;
+}
+
+// GRID - Project showcase with exposed borders
 .grid {
-
-    margin: auto;
-    padding: 3px;
-
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    grid-gap: 3px;
-    grid-auto-rows: minmax(100px, auto);
-
-    @media screen and (max-width: 700px) {
+    border-top: 2px solid $black;
+    border-left: 2px solid $black;
+    
+    @media screen and (max-width: 900px) {
         grid-template-columns: repeat(2, 1fr);
     }
-
+    
+    @media screen and (max-width: 600px) {
+        grid-template-columns: 1fr;
+    }
+    
     &__item {
         position: relative;
-        padding: 10px;
+        padding: 30px;
+        border-right: 2px solid $black;
+        border-bottom: 2px solid $black;
+        background-color: $white;
+        transition: background-color 0.1s ease;
+        
+        &:hover {
+            background-color: $yellow;
+        }
+        
         &.readme {
             cursor: help;
         }
-        border: 1px solid black;
-    }
-
-
-}
-
-.modalTemplate {
-    position: absolute;
-    width: 400px;
-    background-color: white;
-    pointer-events: none;
-}
-
-form {
-    input {
-        display: block;
-        width: 100%;
-        padding: 0px;
-        margin: 0;
-        border: 1px solid black;
-        border-top: 0px;
-        font-size: 200px;
-        outline: none;
-        box-sizing: border-box;
-    }
-    textarea {
-        font-size: 100px;
-        border: 1px solid black;
-        font-family: 'Courier New', Courier, monospace;
-        width: 100%;
-        height: 700px;
-        overflow: none;
-        resize: none;
-        overflow: hidden;
-        margin: 0px;
-        padding: 1px;
-        box-sizing: border-box;
-    }
-
-    button {
-        background-color: black;
-        box-sizing: border-box;
-        border: none;
-        color: white;
-        width: 100%;
-        font-size: 200px;
-        margin: 0px;
-        padding: 1px;
-    }
-}
-
-.project {
-    &--title {
-
-    }
-
-    &--meta {
-        font-family: 'Courier New', Courier, monospace;
-        display: flex !important;
-        list-style-type: none;
-        padding: 0px 5px;
-        margin: 0;
-        width: 100%;
-        flex-wrap: wrap;
-        justify-content: flex-start;
-
-        li {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            &:not(:first-child) {
-                margin-left: 10px;
-            }
+        
+        // Category headers in grid
+        &:has(.project-category) {
+            background-color: $black;
+            color: $white;
         }
     }
 }
 
+// PROJECT STYLES
+.project-category {
+    text-align: left;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 0;
+}
+
+.project--title {
+    font-weight: bold;
+    margin-bottom: 15px;
+    font-size: 16px;
+    
+    a {
+        text-decoration: none;
+        border-bottom: 2px solid $black;
+        
+        &:hover {
+            text-decoration: line-through;
+            border-bottom-color: transparent;
+        }
+    }
+}
+
+.project--meta {
+    font-family: $font-mono;
+    display: flex;
+    list-style-type: none;
+    padding: 0;
+    margin: 20px 0 0 0;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    
+    li {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        
+        &:not(:first-child) {
+            margin-left: 15px;
+        }
+        
+        &::before {
+            content: '/';
+            margin-right: 5px;
+            color: $gray;
+        }
+    }
+    
+    .project-date {
+        color: $gray;
+    }
+}
+
+// MODAL - Raw, no fancy styling
+.modalTemplate {
+    position: absolute;
+    width: 90%;
+    max-width: 600px;
+    background-color: $white;
+    border: 2px solid $black;
+    box-shadow: 8px 8px 0 $black;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+// FORM - Brutalist inputs
+form {
+    border-top: 2px solid $black;
+    
+    input {
+        display: block;
+        width: 100%;
+        padding: 20px;
+        margin: 0;
+        border: none;
+        border-bottom: 2px solid $black;
+        font-size: clamp(30px, 5vw, 60px);
+        font-family: $font-mono;
+        outline: none;
+        box-sizing: border-box;
+        background-color: $white;
+        text-transform: uppercase;
+        
+        &:focus {
+            background-color: $yellow;
+        }
+        
+        &::placeholder {
+            color: $gray;
+        }
+    }
+    
+    textarea {
+        font-size: clamp(20px, 3vw, 30px);
+        border: none;
+        border-bottom: 2px solid $black;
+        font-family: $font-mono;
+        width: 100%;
+        height: 300px;
+        resize: none;
+        margin: 0;
+        padding: 20px;
+        box-sizing: border-box;
+        outline: none;
+        line-height: 1.4;
+        
+        &:focus {
+            background-color: $yellow;
+        }
+    }
+    
+    button {
+        background-color: $black;
+        box-sizing: border-box;
+        border: none;
+        color: $white;
+        width: 100%;
+        font-size: clamp(40px, 6vw, 80px);
+        margin: 0;
+        padding: 20px;
+        font-family: $font-mono;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.1s ease;
+        
+        &:hover {
+            background-color: $yellow;
+            color: $black;
+            text-decoration: line-through;
+        }
+    }
+}
+
+// SOCIAL SECTION - Alternate background
+.social {
+    background-color: $off-white;
+    border-top: 2px solid $black;
+    
+    .content {
+        padding: 40px 0;
+    }
+}
+
+// TECHNICAL LABELS
+.tech-label {
+    font-family: $font-mono;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: $gray;
+    display: block;
+    margin-bottom: 10px;
+}
+
+// SCROLLBAR - Raw, visible
+::-webkit-scrollbar {
+    width: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: $white;
+    border-left: 2px solid $black;
+}
+
+::-webkit-scrollbar-thumb {
+    background: $black;
+    border: 2px solid $black;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: $yellow;
+}
+
+// SELECTION - High contrast
+::selection {
+    background-color: $yellow;
+    color: $black;
+}
+
+// RESPONSIVE ADJUSTMENTS
+@media screen and (max-width: 600px) {
+    .profile {
+        padding: 40px 20px;
+        font-size: 16px;
+    }
+    
+    .title {
+        padding: 30px 15px;
+    }
+    
+    .grid__item {
+        padding: 20px;
+    }
+}
+
+// CUSTOM CURSOR - Brutalist yellow circle
 body {
     cursor: none;
 }
@@ -230,24 +618,239 @@ body {
 
 .custom-cursor {
     position: fixed;
-    width: 20px;
-    height: 20px;
+    width: 40px;
+    height: 40px;
+    background: $yellow;
+    border: 3px solid $black;
     pointer-events: none;
     z-index: 10000;
     opacity: 1;
     left: 50%;
     top: 50%;
+    transform: translate(-50%, -50%) 
+               rotateX(var(--tilt-y, 0deg)) 
+               rotateY(var(--tilt-x, 0deg)) 
+               rotateZ(var(--rotation, 0deg));
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    will-change: transform;
     visibility: visible;
+    
+    // Main body - yellow square with crosshair detail
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: 
+            linear-gradient(90deg, transparent 45%, $black 45%, $black 55%, transparent 55%),
+            linear-gradient(0deg, transparent 45%, $black 45%, $black 55%, transparent 55%);
+        pointer-events: none;
+        transform: translateZ(5px);
+    }
+    
+    // Corner brackets - technical/geometric detail
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 4px;
+        border: 2px solid $black;
+        pointer-events: none;
+        transform: translateZ(8px);
+        clip-path: polygon(
+            0 0, 8px 0, 8px 2px, 2px 2px, 2px 8px, 0 8px,
+            0 100%, 0 calc(100% - 8px), 2px calc(100% - 8px), 
+            2px calc(100% - 2px), 8px calc(100% - 2px), 8px 100%,
+            100% 100%, calc(100% - 8px) 100%, calc(100% - 8px) calc(100% - 2px),
+            calc(100% - 2px) calc(100% - 2px), calc(100% - 2px) calc(100% - 8px),
+            100% calc(100% - 8px), 100% 0,
+            calc(100% - 8px) 0, calc(100% - 8px) 2px,
+            calc(100% - 2px) 2px, calc(100% - 2px) 8px,
+            100% 8px
+        );
+    }
+    
+    &.hover {
+        width: 60px;
+        height: 60px;
+    }
+    
+    &.clicking {
+        transform: translate(-50%, -50%) 
+                   rotateX(var(--tilt-y, 0deg)) 
+                   rotateY(var(--tilt-x, 0deg)) 
+                   rotateZ(var(--rotation, 0deg))
+                   scale(0.8);
+    }
 }
 
+// Depth shadow layer - separate element for true 3D extrusion effect
 .custom-cursor-depth {
     position: fixed;
-    width: 10px;
-    height: 10px;
+    width: 40px;
+    height: 40px;
+    background: $black;
     pointer-events: none;
     z-index: 9999;
     opacity: 1;
     left: 50%;
     top: 50%;
+    transform: translate(calc(-50% + 8px), calc(-50% + 8px));
+    will-change: transform;
     visibility: visible;
+    
+    &.hover {
+        width: 60px;
+        height: 60px;
+    }
+    
+    &.clicking {
+        transform: translate(calc(-50% + 6px), calc(-50% + 6px));
+    }
+}
+
+// Touch device fallback - show default cursor
+@media (pointer: coarse) {
+    body {
+        cursor: auto;
+    }
+    
+    .custom-cursor,
+    .custom-cursor-depth {
+        display: none;
+    }
+}
+
+// Reduced motion preference - disable cursor
+@media (prefers-reduced-motion: reduce) {
+    .custom-cursor,
+    .custom-cursor-depth {
+        display: none;
+    }
+    
+    body {
+        cursor: auto;
+    }
+}
+
+// SCROLL PROGRESS INDICATOR - Raw brutalist progress bar
+.scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background-color: $black;
+    z-index: 10001;
+    
+    &-bar {
+        height: 100%;
+        background-color: $yellow;
+        width: 0%;
+        // No transition - raw, immediate movement
+    }
+}
+
+// Reduced motion - hide scroll progress
+@media (prefers-reduced-motion: reduce) {
+    .scroll-progress {
+        display: none;
+    }
+}
+
+// TEXT REVEAL ANIMATION - Slide in from left
+.text-reveal {
+    display: inline-block;
+    transform: translateX(-100%);
+    opacity: 0;
+    
+    &.visible {
+        transform: translateX(0);
+        opacity: 1;
+        // No transition - immediate, brutalist reveal
+    }
+}
+
+// Reduced motion - disable text reveal
+@media (prefers-reduced-motion: reduce) {
+    .text-reveal {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+// RGB SPLIT GLITCH EFFECT - Random glitch animations
+@keyframes glitch-anim {
+    0% {
+        transform: translate(0);
+        text-shadow: none;
+    }
+    20% {
+        transform: translate(2px, 2px);
+        text-shadow: -3px 0 #ff0000, 3px 0 #00ffff;
+    }
+    40% {
+        transform: translate(-2px, -2px);
+        text-shadow: 3px 0 #ff0000, -3px 0 #00ffff;
+    }
+    60% {
+        transform: translate(2px, -2px);
+        text-shadow: -2px 0 #ff00ff, 2px 0 #00ff00;
+    }
+    80% {
+        transform: translate(-2px, 2px);
+        text-shadow: 2px 0 #ff0000, -2px 0 #00ffff;
+    }
+    100% {
+        transform: translate(0);
+        text-shadow: none;
+    }
+}
+
+// Intense glitch variant
+@keyframes glitch-anim-intense {
+    0% {
+        transform: translate(0) skew(0deg);
+        text-shadow: none;
+    }
+    15% {
+        transform: translate(4px, 3px) skew(2deg);
+        text-shadow: -4px 0 #ff0000, 4px 0 #00ffff;
+    }
+    30% {
+        transform: translate(-4px, -3px) skew(-2deg);
+        text-shadow: 4px 0 #ff0000, -4px 0 #00ffff;
+    }
+    45% {
+        transform: translate(3px, -4px) skew(1deg);
+        text-shadow: -3px 0 #ff00ff, 3px 0 #00ff00;
+    }
+    60% {
+        transform: translate(-3px, 4px) skew(-1deg);
+        text-shadow: 3px 0 #ffff00, -3px 0 #ff00ff;
+    }
+    75% {
+        transform: translate(2px, 2px) skew(0deg);
+        text-shadow: -2px 0 #ff0000, 2px 0 #00ffff;
+    }
+    100% {
+        transform: translate(0) skew(0deg);
+        text-shadow: none;
+    }
+}
+
+.glitch-active {
+    animation: glitch-anim 200ms linear;
+    
+    &.glitch-intense {
+        animation: glitch-anim-intense 250ms linear;
+    }
+}
+
+// Reduced motion - disable glitch
+@media (prefers-reduced-motion: reduce) {
+    .glitch-active {
+        animation: none !important;
+        text-shadow: none !important;
+        transform: none !important;
+    }
 }
