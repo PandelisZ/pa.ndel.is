@@ -25,22 +25,29 @@
 
 <body>
 
-    <section class="blade blade__overflow">
+    <div class="grid-lines"></div>
+
+    <section class="blade blade__overflow hero-brutalist">
+        <div class="hero-border top"></div>
+        <div class="hero-border left"></div>
+        <canvas id="hero-canvas"></canvas>
         <div class="blade--left">
-            <h1>Pandelis Zembashis</h1>
+            <h1 class="hero-text">Pandelis Zembashis</h1>
         </div>
         <div class="blade--right">
-            <h1>CTO @ Cosine</h1>
+            <h1 class="hero-text-secondary">CTO @ Cosine</h1>
         </div>
+        <div class="hero-border bottom"></div>
+        <div class="hero-border right"></div>
     </section>
 
     <div class="content">
-        <div class="title" id="profile">
+        <div class="title" id="profile" data-section="01">
             <h1>profile</h1>
             <div class="nav" style="display:none">
                 <h2><a href="#projects">Projects</a></h2>
                 <h2><a href="#social">Get in touch</a></h2>
-                <h2><a href="https://awesomeblog.com">Blog</a></h2>
+                <h2><a href="https://cosine.sh/blog">Blog</a></h2>
             </div>
         </div>
 
@@ -78,7 +85,7 @@
                 venues in 🇬🇧 and  🇺🇸.
             </p>
             <p>
-                In other news check out some of my <a href="#projects">👨‍🔧 projects</a>, <a href="https://awesomeblog.com">📝
+                In other news check out some of my <a href="#projects">👨‍🔧 projects</a>, <a href="https://cosine.sh/blog">📝
                     blog</a> or drop a follow on <a href="https://twitter.com/pandelisz">🐦 twitter</a>
                 to reinforce my vanity.
             </p>
@@ -100,12 +107,12 @@
 
     <div class="content">
 
-        <div class="title" id="projects">
+        <div class="title" id="projects" data-section="02">
             <h1>projects</h1>
             <div class="nav" style="display:none">
                 <h2><a href="#profile">Profile</a></h2>
                 <h2><a href="#social">Get in touch</a></h2>
-                <h2><a href="https://awesomeblog.com">Blog</a></h2>
+                <h2><a href="https://cosine.sh/blog">Blog</a></h2>
             </div>
         </div>
 
@@ -343,12 +350,12 @@
 
     <div class="social">
 
-            <div class="title" id="social">
+            <div class="title" id="social" data-section="03">
                 <h1>get in touch</h1>
                 <div class="nav" style="display:none">
                     <h2><a href="#profile">Profile</a></h2>
                     <h2><a href="#projects">Projects</a></h2>
-                    <h2><a href="https://awesomeblog.com">Blog</a></h2>
+                    <h2><a href="https://cosine.sh/blog">Blog</a></h2>
                 </div>
             </div>
 
@@ -375,6 +382,7 @@
 
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="./main.js"></script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=UA-69398382-5"></script>
 <script>
