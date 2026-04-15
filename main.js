@@ -109,7 +109,77 @@ gridItems.forEach(div => {
 
     modalTemplate.style = 'display: none;'
 
-
   })
 })
+
+// 3D Custom Cursor with depth effect
+function initCustomCursor() {
+  // Create cursor elements
+  const cursor = document.createElement('div');
+  cursor.className = 'custom-cursor';
+  document.body.appendChild(cursor);
+
+  const cursorDepth = document.createElement('div');
+  cursorDepth.className = 'custom-cursor-depth';
+  document.body.appendChild(cursorDepth);
+
+  // Force cursor visibility immediately
+  cursor.style.opacity = '1';
+  cursor.style.visibility = 'visible';
+  cursor.style.display = 'block';
+  cursorDepth.style.opacity = '1';
+  cursorDepth.style.visibility = 'visible';
+  cursorDepth.style.display = 'block';
+
+  // Set initial position to center of viewport
+  const initialX = window.innerWidth / 2;
+  const initialY = window.innerHeight / 2;
+  cursor.style.left = initialX + 'px';
+  cursor.style.top = initialY + 'px';
+  cursorDepth.style.left = initialX + 'px';
+  cursorDepth.style.top = initialY + 'px';
+
+  let mouseX = initialX;
+  let mouseY = initialY;
+  let cursorX = initialX;
+  let cursorY = initialY;
+  let depthX = initialX;
+  let depthY = initialY;
+
+  // Track mouse movement
+  document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  });
+
+  // Animation loop for smooth cursor following
+  function animateCursor() {
+    // Smooth follow for main cursor
+    cursorX += (mouseX - cursorX) * 0.15;
+    cursorY += (mouseY - cursorY) * 0.15;
+
+    // Smoother follow for depth cursor (parallax effect)
+    depthX += (mouseX - depthX) * 0.08;
+    depthY += (mouseY - depthY) * 0.08;
+
+    cursor.style.left = cursorX + 'px';
+    cursor.style.top = cursorY + 'px';
+    cursorDepth.style.left = depthX + 'px';
+    cursorDepth.style.top = depthY + 'px';
+
+    requestAnimationFrame(animateCursor);
+  }
+
+  animateCursor();
+
+  // Cursor visibility is always on - no hiding when leaving window
+  // This prevents issues where cursor starts invisible
+}
+
+// Initialize cursor when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initCustomCursor);
+} else {
+  initCustomCursor();
+}
 
