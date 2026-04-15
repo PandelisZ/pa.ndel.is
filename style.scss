@@ -212,3 +212,42 @@ form {
         }
     }
 }
+
+body {
+    cursor: none;
+}
+
+// Fallback: if custom cursor fails to load, restore default after delay
+@keyframes cursorFallback {
+    from { cursor: none; }
+    to { cursor: auto; }
+}
+
+body {
+    // Fallback in case JS fails - restore default cursor after 2 seconds
+    animation: cursorFallback 0s ease-in 2s forwards;
+}
+
+.custom-cursor {
+    position: fixed;
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+    z-index: 10000;
+    opacity: 1;
+    left: 50%;
+    top: 50%;
+    visibility: visible;
+}
+
+.custom-cursor-depth {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 1;
+    left: 50%;
+    top: 50%;
+    visibility: visible;
+}
