@@ -1,4 +1,4 @@
-import 'babel-polyfill'
+// babel-polyfill removed - modern browsers support the needed features natively
 const nameNode = document.querySelector('.blade--left > h1')
 const subtitleNode = document.querySelector('.blade--right > h1')
 const profileHeaderText = document.querySelector('#profile > h1')
@@ -45,7 +45,8 @@ const visitorName = function(event) {
   // visitorNameNodes.forEach(n => n.innerHTML = name)
 }
 
-visitorNameNodes.forEach(div => {
+function initVisitorNames() {
+  visitorNameNodes.forEach(div => {
     const setVisitorName = sessionStorage.getItem('visitorName')
     if (typeof setVisitorName === 'string' && setVisitorName != 'undefined' && setVisitorName != '') {
       div.innerHTML = setVisitorName
@@ -57,7 +58,15 @@ visitorNameNodes.forEach(div => {
     div.addEventListener("cut", visitorName);
     div.addEventListener("delete", visitorName);
     div.addEventListener("mouseup", visitorName);
-})
+  })
+}
+
+// Initialize visitor names after DOM is loaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initVisitorNames);
+} else {
+  initVisitorNames();
+}
 
 
 const readmes = {}
@@ -355,7 +364,10 @@ if (document.readyState === 'loading') {
 } else {
   initHeroWebGL();
 }
-gridItems.forEach(div => {
+
+// Initialize grid items interactions after DOM is loaded
+function initGridItems() {
+  gridItems.forEach(div => {
 
   div.addEventListener('mousemove', (e) => {
     let mouseTick = false;
@@ -404,7 +416,15 @@ gridItems.forEach(div => {
 
 
   })
-})
+  })
+}
+
+// Initialize grid items after DOM is loaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initGridItems);
+} else {
+  initGridItems();
+}
 
 // CUSTOM CURSOR - Brutalist yellow circle with hover effects
 (function initCustomCursor() {
