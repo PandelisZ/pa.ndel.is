@@ -83,6 +83,26 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/regenerator-runtime@0.13.11/runtime.min.js"></script>
+    <script>
+      // Map postprocessing classes to THREE namespace
+      if (typeof window.EffectComposer !== 'undefined' && typeof THREE !== 'undefined') {
+        THREE.EffectComposer = window.EffectComposer;
+      }
+      if (typeof window.CopyShader !== 'undefined' && typeof THREE !== 'undefined') {
+        THREE.CopyShader = window.CopyShader;
+      }
+      if (typeof window.RenderPass !== 'undefined' && typeof THREE !== 'undefined') {
+        THREE.RenderPass = window.RenderPass;
+      }
+      if (typeof window.ShaderPass !== 'undefined' && typeof THREE !== 'undefined') {
+        THREE.ShaderPass = window.ShaderPass;
+      }
+    </script>
     <script src="./js/transitions.js"></script>
     <script src="./js/page-manager.js"></script>
     <script src="./main.js"></script>
@@ -132,13 +152,13 @@
                                 </div>
                             </div>
                             <h2 class="article-title" style="font-size: clamp(24px, 4vw, 36px); margin-bottom: 20px; line-height: 1.1;">
-                                <a href="article.html?id=${article.slug}" data-internal-link style="text-decoration: none;">${article.title}</a>
+                                <a href="${article.externalLink || 'article.html?id=' + article.slug}" ${article.externalLink ? 'target="_blank" rel="noopener"' : 'data-internal-link'} style="text-decoration: none;">${article.title}</a>
                             </h2>
                             <p class="article-excerpt" style="font-size: 14px; line-height: 1.5; margin-bottom: 25px; color: #333;">
                                 ${article.excerpt}
                             </p>
-                            <a href="article.html?id=${article.slug}" data-internal-link class="read-more" data-cursor="hover" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none; border-bottom: 2px solid #000; padding-bottom: 2px; font-weight: bold;">
-                                Read more →
+                            <a href="${article.externalLink || 'article.html?id=' + article.slug}" ${article.externalLink ? 'target="_blank" rel="noopener"' : 'data-internal-link'} class="read-more" data-cursor="hover" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; text-decoration: none; border-bottom: 2px solid #000; padding-bottom: 2px; font-weight: bold;">
+                                ${article.externalLink ? 'Read external article →' : 'Read more →'}
                             </a>
                         </article>
                     `).join('');
@@ -169,4 +189,4 @@
 
 </body>
 
-</html>>tml>tml>
+</html>
