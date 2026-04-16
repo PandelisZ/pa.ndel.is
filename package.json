@@ -1,18 +1,22 @@
 {
   "devDependencies": {
     "cssnano": "^4.1.10",
-    "sass": "^1.17.2"
+    "gh-pages": "^6.3.0",
+    "sass": "^1.17.2",
+    "wrangler": "^3.0.0"
   },
   "scripts": {
     "start": "parcel index.html",
+    "build": "parcel build index.html --dist-dir dist --public-url ./",
     "deploy": "npm run gh-pages",
+    "deploy:cf": "wrangler pages deploy dist",
     "gh-pages": "gh-pages -d dist -b gh-pages"
   },
   "dependencies": {
     "babel-polyfill": "^6.26.0",
-    "gh-pages": "^2.0.1",
     "parcel": "^1.12.4",
-    "parcel-plugin-static-files-copy": "^2.0.0"
+    "parcel-plugin-static-files-copy": "^2.0.0",
+    "playwright": "^1.59.1"
   },
   "staticFiles": {
     "staticPath": [
