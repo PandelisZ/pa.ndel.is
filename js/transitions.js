@@ -364,6 +364,9 @@ class PageTransition {
     const href = link.getAttribute('href');
     if (!href) return;
     
+    // Skip if PageManager will handle this (has data-internal-link)
+    if (link.hasAttribute('data-internal-link')) return;
+    
     // Only handle same-origin links
     if (href.startsWith('#') || href.startsWith('javascript:')) return;
     
@@ -414,14 +417,17 @@ class PageTransition {
   }
   
   async start(destination) {
+    // Handle both string URL and object with options
+    const destUrl = typeof destination === 'string' ? destination : destination?.url || destination;
+    
     if (this.isActive || this.prefersReducedMotion) {
       // Skip animation, navigate directly
-      window.location.href = destination;
+      window.location.href = destUrl;
       return;
     }
     
     this.isActive = true;
-    this.destination = destination;
+    this.destination = destUrl;
     this.startTime = performance.now();
     
     // Capture current page
@@ -436,7 +442,7 @@ class PageTransition {
     
     // Navigate after animation
     setTimeout(() => {
-      window.location.href = destination;
+      window.location.href = destUrl;
     }, this.duration);
   }
   
