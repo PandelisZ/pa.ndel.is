@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "cssnano": "^4.1.10",
     "gh-pages": "^6.3.0",
     "sass": "^1.17.2",

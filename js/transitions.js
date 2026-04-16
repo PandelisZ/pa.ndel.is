@@ -35,7 +35,8 @@ class PageTransition {
       uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
       uTexture: { value: null },
       uGlitchIntensity: { value: 0 },
-      uDirection: { value: 1 } // 1 = out, -1 = in
+      uDirection: { value: 1 }, // 1 = out, -1 = in
+      uType: { value: 0 } // 0=glitch-wipe, 1=chromatic-split, 2=pixel-sort, 3=noise-reveal
     };
     
     // Bind methods
@@ -582,14 +583,25 @@ function initPageTransitions() {
   return new PageTransition();
 }
 
-// Initialize
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initPageTransitions);
-} else {
+// Initialize - wait for THREE and postprocessing to be loaded
+function waitForThreeAndInit() {
+  if (typeof THREE === 'undefined' || 
+      typeof THREE.EffectComposer === 'undefined' ||
+      typeof THREE.RenderPass === 'undefined' ||
+      typeof THREE.ShaderPass === 'undefined') {
+    // Retry in 100ms
+    setTimeout(waitForThreeAndInit, 100);
+    return;
+  }
   window.pageTransition = initPageTransitions();
 }
 
-// Export for module use
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { PageTransition, initPageTransitions };
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', waitForThreeAndInit);
+} else {
+  waitForThreeAndInit();
 }
+
+// Expose to global scope for non-module usage
+window.PageTransition = PageTransition;
+window.initPageTransitions = initPageTransitions;

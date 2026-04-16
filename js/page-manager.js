@@ -3,9 +3,7 @@
  * Handles internal link interception, history management, and page lifecycle
  */
 
-import { PageTransition } from './transitions.js';
-
-export class PageManager {
+class PageManager {
   constructor(options = {}) {
     this.options = {
       transitionSelector: '[data-transition]',
@@ -909,4 +907,6 @@ export class PageManager {
   }
 }
 
-export default PageManager;
+// Auto-initialize PageManager
+const pageManager = new PageManager();
+pageManager.init();

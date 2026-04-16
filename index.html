@@ -47,7 +47,7 @@
             <div class="nav" style="display:none">
                 <h2><a href="#projects">Projects</a></h2>
                 <h2><a href="#social">Get in touch</a></h2>
-                <h2><a href="https://cosine.sh/blog">Blog</a></h2>
+                <h2><a href="writing.html" data-internal-link>Blog</a></h2>
                 <h2><a href="writing.html" data-internal-link>WRITING</a></h2>
             </div>
         </div>
@@ -64,7 +64,7 @@
                 an autonomous AI software engineer that can read your codebase, write code, and ship features like a human colleague would.
             </p>
             <p>
-                In other news check out some of my <a href="#projects">👨‍🔧 projects</a>, <a href="https://cosine.sh/blog">📝
+                In other news check out some of my <a href="#projects">👨‍🔧 projects</a>, <a href="writing.html" data-internal-link>📝
                     blog</a> or drop a follow on <a href="https://twitter.com/pandelisz">🐦 twitter</a>
                 to reinforce my vanity.
             </p>
@@ -86,7 +86,7 @@
                 venues in 🇬🇧 and  🇺🇸.
             </p>
             <p>
-                In other news check out some of my <a href="#projects">👨‍🔧 projects</a>, <a href="https://cosine.sh/blog">📝
+                In other news check out some of my <a href="#projects">👨‍🔧 projects</a>, <a href="writing.html" data-internal-link>📝
                     blog</a> or drop a follow on <a href="https://twitter.com/pandelisz">🐦 twitter</a>
                 to reinforce my vanity.
             </p>
@@ -113,7 +113,7 @@
             <div class="nav" style="display:none">
                 <h2><a href="#profile">Profile</a></h2>
                 <h2><a href="#social">Get in touch</a></h2>
-                <h2><a href="https://cosine.sh/blog">Blog</a></h2>
+                <h2><a href="writing.html" data-internal-link>Blog</a></h2>
                 <h2><a href="writing.html" data-internal-link>WRITING</a></h2>
             </div>
         </div>
@@ -471,7 +471,7 @@
                 <div class="nav" style="display:none">
                     <h2><a href="#profile">Profile</a></h2>
                     <h2><a href="#projects">Projects</a></h2>
-                    <h2><a href="https://cosine.sh/blog">Blog</a></h2>
+                    <h2><a href="writing.html" data-internal-link>Blog</a></h2>
                     <h2><a href="writing.html" data-internal-link>WRITING</a></h2>
                 </div>
             </div>
@@ -500,7 +500,28 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/regenerator-runtime@0.13.11/runtime.min.js"></script>
+    <script>
+      // Map postprocessing classes to THREE namespace
+      if (typeof window.EffectComposer !== 'undefined' && typeof THREE !== 'undefined') {
+        THREE.EffectComposer = window.EffectComposer;
+      }
+      if (typeof window.CopyShader !== 'undefined' && typeof THREE !== 'undefined') {
+        THREE.CopyShader = window.CopyShader;
+      }
+      if (typeof window.RenderPass !== 'undefined' && typeof THREE !== 'undefined') {
+        THREE.RenderPass = window.RenderPass;
+      }
+      if (typeof window.ShaderPass !== 'undefined' && typeof THREE !== 'undefined') {
+        THREE.ShaderPass = window.ShaderPass;
+      }
+    </script>
     <script src="./js/transitions.js"></script>
+    <script src="./js/page-manager.js"></script>
     <script src="./main.js"></script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=UA-69398382-5"></script>
 <script>
@@ -509,12 +530,6 @@
   gtag('js', new Date());
 
   gtag('config', 'UA-69398382-5');
-</script>
-
-<script type="module">
-  import { PageManager } from './js/page-manager.js';
-  const pageManager = new PageManager();
-  pageManager.init();
 </script>
 
 </body>
