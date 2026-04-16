@@ -854,3 +854,721 @@ body {
         transform: none !important;
     }
 }
+
+// ============================================
+// PAGE TRANSITION & MULTI-PAGE STYLES
+// ============================================
+
+// PAGE TRANSITION OVERLAY - WebGL canvas overlay for transitions
+.page-transition-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 10002; // Above everything
+    pointer-events: all;
+    opacity: 0;
+    visibility: hidden;
+    
+    &.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    canvas {
+        width: 100%;
+        height: 100%;
+    }
+}
+
+// PAGE TRANSITION STATES
+body.is-transitioning {
+    pointer-events: none;
+    overflow: hidden;
+    
+    // Ensure cursor stays visible during transition
+    .custom-cursor,
+    .custom-cursor-depth {
+        opacity: 1 !important;
+    }
+}
+
+// Reduced motion - instant transitions, no overlay
+@media (prefers-reduced-motion: reduce) {
+    .page-transition-overlay {
+        display: none;
+    }
+    
+    body.is-transitioning {
+        pointer-events: auto;
+        overflow: auto;
+    }
+}
+
+// SITE NAVIGATION - Site-wide nav styles
+.site-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    background-color: $white;
+    border-bottom: 2px solid $black;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    .nav-brand {
+        font-family: $font-mono;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-weight: bold;
+        
+        a {
+            text-decoration: none;
+            border-bottom: 2px solid transparent;
+            
+            &:hover {
+                border-bottom-color: $black;
+            }
+        }
+    }
+    
+    .nav-links {
+        display: flex;
+        gap: 30px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .nav-link {
+        font-family: $font-mono;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-decoration: none;
+        padding: 5px 0;
+        border-bottom: 2px solid transparent;
+        transition: all 0.1s ease;
+        
+        &:hover {
+            border-bottom-color: $black;
+            background-color: transparent;
+            text-decoration: none;
+        }
+        
+        &.active {
+            border-bottom-color: $yellow;
+            background-color: $yellow;
+            padding: 5px 10px;
+            
+            &:hover {
+                border-bottom-color: $black;
+            }
+        }
+    }
+}
+
+// ARTICLE HERO - Hero variant for article pages
+.article-hero {
+    background-color: $black;
+    color: $white;
+    padding: 120px 40px 60px;
+    border-bottom: 2px solid $black;
+    
+    h1 {
+        font-size: clamp(40px, 8vw, 100px);
+        line-height: 0.9;
+        margin-bottom: 20px;
+        text-shadow: 4px 4px 0 rgba($yellow, 0.3);
+        
+        // Text reveal animation support
+        .text-reveal {
+            display: inline-block;
+            transform: translateX(-100%);
+            opacity: 0;
+            
+            &.visible {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    }
+    
+    .article-hero-subtitle {
+        font-family: $font-mono;
+        font-size: 14px;
+        color: $gray;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+}
+
+// ARTICLE CONTAINER - Main article content wrapper
+.article-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 60px 40px;
+    background-color: $white;
+    border-left: 2px solid $black;
+    border-right: 2px solid $black;
+    min-height: 50vh;
+    
+    @media screen and (max-width: 900px) {
+        border-left: none;
+        border-right: none;
+        padding: 40px 20px;
+    }
+}
+
+// ARTICLE META - Date, author, tags
+.article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 20px 0;
+    margin-bottom: 40px;
+    border-top: 2px solid $black;
+    border-bottom: 2px solid $black;
+    font-family: $font-mono;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    
+    .article-date {
+        color: $gray;
+        
+        &::before {
+            content: '[';
+        }
+        
+        &::after {
+            content: ']';
+        }
+    }
+    
+    .article-author {
+        color: $black;
+        font-weight: bold;
+    }
+    
+    .article-tags {
+        display: flex;
+        gap: 10px;
+        margin-left: auto;
+        
+        .tag {
+            background-color: $yellow;
+            padding: 2px 8px;
+            border: 2px solid $black;
+            
+            &:hover {
+                background-color: $black;
+                color: $white;
+            }
+        }
+    }
+}
+
+// ARTICLE CONTENT - Article body styles
+.article-content {
+    font-family: $font-system;
+    font-size: 18px;
+    line-height: 1.7;
+    
+    h2, h3 {
+        font-family: $font-mono;
+        margin-top: 60px;
+        margin-bottom: 20px;
+        text-transform: uppercase;
+        letter-spacing: -0.02em;
+    }
+    
+    h2 {
+        font-size: clamp(28px, 5vw, 48px);
+        border-bottom: 2px solid $black;
+        padding-bottom: 10px;
+        
+        &::before {
+            content: '// ';
+            color: $yellow;
+            text-shadow: 2px 0 0 $black;
+        }
+    }
+    
+    h3 {
+        font-size: clamp(20px, 3vw, 28px);
+        
+        &::before {
+            content: '> ';
+            color: $gray;
+        }
+    }
+    
+    p {
+        margin-bottom: 24px;
+        
+        &:first-of-type {
+            font-size: 20px;
+            line-height: 1.6;
+            color: $black;
+        }
+    }
+    
+    // CODE BLOCKS - Brutalist syntax highlighting
+    pre {
+        background-color: $black;
+        color: $yellow;
+        padding: 20px;
+        overflow-x: auto;
+        border: 2px solid $black;
+        margin: 30px 0;
+        position: relative;
+        
+        // Add code label
+        &::before {
+            content: 'CODE';
+            position: absolute;
+            top: 0;
+            right: 0;
+            background-color: $yellow;
+            color: $black;
+            padding: 2px 8px;
+            font-family: $font-mono;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+        
+        code {
+            font-family: $font-mono;
+            font-size: 13px;
+            line-height: 1.5;
+            background: none;
+            color: inherit;
+            padding: 0;
+            
+            // Syntax highlighting colors
+            .keyword { color: $yellow; font-weight: bold; }
+            .string { color: #fff; }
+            .comment { color: $gray; }
+            .function { color: #fff; text-decoration: underline; }
+        }
+    }
+    
+    code {
+        font-family: $font-mono;
+        font-size: 14px;
+        background-color: $off-white;
+        padding: 2px 6px;
+        border: 1px solid $gray;
+    }
+    
+    // BLOCKQUOTE - Yellow left border
+    blockquote {
+        margin: 30px 0;
+        padding: 20px 30px;
+        border-left: 6px solid $yellow;
+        background-color: $off-white;
+        font-style: italic;
+        
+        p {
+            margin: 0;
+            
+            &:first-of-type {
+                font-size: 18px;
+            }
+        }
+        
+        cite {
+            display: block;
+            margin-top: 15px;
+            font-family: $font-mono;
+            font-size: 11px;
+            text-transform: uppercase;
+            font-style: normal;
+            color: $gray;
+            
+            &::before {
+                content: '— ';
+            }
+        }
+    }
+    
+    // IMAGES - 2px black border
+    img {
+        max-width: 100%;
+        height: auto;
+        border: 2px solid $black;
+        margin: 30px 0;
+        display: block;
+    }
+    
+    // LISTS
+    ul, ol {
+        margin: 20px 0;
+        padding-left: 30px;
+        
+        li {
+            margin-bottom: 10px;
+        }
+    }
+    
+    ul {
+        list-style-type: square;
+        
+        li::marker {
+            color: $yellow;
+        }
+    }
+    
+    // LINKS within content
+    a {
+        border-bottom: 2px solid $black;
+        
+        &:hover {
+            border-bottom-color: transparent;
+        }
+    }
+    
+    // HORIZONTAL RULE
+    hr {
+        border: none;
+        border-top: 2px solid $black;
+        margin: 50px 0;
+        position: relative;
+        
+        &::after {
+            content: '[ END SECTION ]';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: $white;
+            padding: 0 15px;
+            font-family: $font-mono;
+            font-size: 10px;
+            color: $gray;
+        }
+    }
+}
+
+// ARTICLE NAVIGATION FOOTER - Prev/next article navigation
+.article-nav-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border: 2px solid $black;
+    border-top: none;
+    margin: 60px 0 40px;
+    
+    .article-nav-prev,
+    .article-nav-next {
+        padding: 30px;
+        border-right: 2px solid $black;
+        transition: all 0.1s ease;
+        
+        &:hover {
+            background-color: $yellow;
+            
+            .nav-article-title {
+                text-decoration: line-through;
+            }
+        }
+        
+        &:last-child {
+            border-right: none;
+        }
+        
+        a {
+            text-decoration: none;
+            display: block;
+        }
+        
+        .nav-direction {
+            font-family: $font-mono;
+            font-size: 10px;
+            color: $gray;
+            display: block;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .nav-article-title {
+            font-family: $font-mono;
+            font-size: 18px;
+            line-height: 1.3;
+            text-transform: uppercase;
+        }
+    }
+    
+    .article-nav-prev {
+        text-align: left;
+    }
+    
+    .article-nav-next {
+        text-align: right;
+        border-left: 2px solid $black;
+    }
+}
+
+// ARTICLE META ENHANCEMENT - Reading time and meta items
+.article-meta {
+    .meta-item {
+        .meta-label {
+            font-family: $font-mono;
+            font-size: 10px;
+            color: $gray;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .meta-value {
+            font-family: $font-mono;
+            font-size: 14px;
+            color: $black;
+            font-weight: bold;
+        }
+    }
+}
+
+// ARTICLE TAGS - Standalone tags component
+.article-tags {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    
+    .tag {
+        font-family: $font-mono;
+        font-size: 11px;
+        text-transform: uppercase;
+        border: 2px solid $black;
+        padding: 4px 10px;
+        background-color: $yellow;
+        text-decoration: none;
+        color: $black;
+        cursor: pointer;
+        
+        &:hover {
+            background-color: $black;
+            color: $yellow;
+        }
+    }
+}
+
+// EXTERNAL LINK BANNER - For linking to external articles
+.external-link-banner {
+    border: 2px solid $black;
+    border-left: 6px solid $yellow;
+    padding: 20px 30px;
+    margin: 30px 0;
+    background-color: $off-white;
+    
+    a {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-family: $font-mono;
+        text-transform: uppercase;
+        text-decoration: none;
+        border-bottom: 2px solid $black;
+        padding-bottom: 2px;
+        
+        &:hover {
+            background-color: $yellow;
+            border-bottom-color: transparent;
+        }
+    }
+}
+
+// ARTICLE CARD GLITCH SUPPORT
+.article-card {
+    &.glitch-active {
+        animation: glitch-anim 200ms linear;
+    }
+}
+
+// ARTICLE BACK LINK - Return to articles list
+.article-back-link {
+    margin-top: 40px;
+    text-align: center;
+    
+    a {
+        display: inline-block;
+        font-family: $font-mono;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        padding: 15px 30px;
+        border: 2px solid $black;
+        background-color: $white;
+        text-decoration: none;
+        
+        &:hover {
+            background-color: $yellow;
+            text-decoration: line-through;
+        }
+    }
+}
+
+// ARTICLE NAVIGATION - Prev/next article links (legacy)
+.article-navigation {
+    display: flex;
+    justify-content: space-between;
+    padding: 40px;
+    background-color: $black;
+    border-top: 2px solid $black;
+    border-bottom: 2px solid $black;
+    
+    .nav-prev,
+    .nav-next {
+        flex: 1;
+        max-width: 45%;
+        
+        a {
+            display: block;
+            color: $white;
+            text-decoration: none;
+            padding: 20px;
+            border: 2px solid $white;
+            transition: all 0.1s ease;
+            
+            &:hover {
+                background-color: $yellow;
+                color: $black;
+                border-color: $black;
+                
+                .nav-label {
+                    color: $black;
+                }
+            }
+            
+            .nav-label {
+                font-family: $font-mono;
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: $gray;
+                margin-bottom: 10px;
+                display: block;
+            }
+            
+            .nav-title {
+                font-size: 16px;
+                line-height: 1.3;
+            }
+        }
+    }
+    
+    .nav-prev {
+        margin-right: auto;
+        
+        .nav-label::before {
+            content: '< ';
+        }
+    }
+    
+    .nav-next {
+        margin-left: auto;
+        text-align: right;
+        
+        .nav-label::after {
+            content: ' >';
+        }
+    }
+}
+
+// ARTICLE LIST GRID - Grid for article listing page
+.article-list-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+    border-top: 2px solid $black;
+    border-left: 2px solid $black;
+    
+    @media screen and (max-width: 900px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+// ARTICLE CARD - Individual article preview cards
+.article-card {
+    border-right: 2px solid $black;
+    border-bottom: 2px solid $black;
+    padding: 30px;
+    background-color: $white;
+    transition: all 0.1s ease;
+    
+    &:hover {
+        background-color: $yellow;
+        
+        .article-card-title {
+            text-decoration: line-through;
+        }
+    }
+    
+    .article-card-category {
+        font-family: $font-mono;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: $gray;
+        margin-bottom: 15px;
+        
+        &::before {
+            content: '[ ';
+        }
+        
+        &::after {
+            content: ' ]';
+        }
+    }
+    
+    .article-card-title {
+        font-family: $font-mono;
+        font-size: 24px;
+        line-height: 1.2;
+        margin-bottom: 15px;
+        text-transform: uppercase;
+        
+        a {
+            text-decoration: none;
+            border-bottom: 2px solid $black;
+            
+            &:hover {
+                border-bottom-color: transparent;
+            }
+        }
+    }
+    
+    .article-card-excerpt {
+        font-size: 14px;
+        line-height: 1.5;
+        color: $gray;
+        margin-bottom: 20px;
+    }
+    
+    .article-card-meta {
+        font-family: $font-mono;
+        font-size: 10px;
+        text-transform: uppercase;
+        color: $gray;
+        display: flex;
+        gap: 15px;
+    }
+}
+
+// Reduced motion support for article animations
+@media (prefers-reduced-motion: reduce) {
+    .article-card,
+    .article-navigation a {
+        transition: none;
+    }
+}
