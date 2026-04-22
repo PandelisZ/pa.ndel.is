@@ -158,6 +158,7 @@ class PageManager {
 
     // Start transition animation
     await this.transition.start({
+      url,
       direction: options.direction || 'forward',
       intensity: options.intensity || 'normal'
     });
