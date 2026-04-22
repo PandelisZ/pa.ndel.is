@@ -8,7 +8,7 @@ async function testNavigation() {
   
   try {
     console.log("\n1. Loading home page...");
-    await page.goto("http://localhost:8080/index.html");
+    await page.goto("http://127.0.0.1:8888/index.html");
     await page.waitForLoadState("networkidle");
     await page.screenshot({ path: "test_nav_1_home.png" });
     console.log("   ✓ Home page loaded");

@@ -1,59 +1,33 @@
-import { chromium } from "playwright-core";
+import { chromium } from 'playwright-core';
 
-const browser = await chromium.launch();
-const page = await browser.newPage();
+async function test() {
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
 
-console.log("Testing with detailed click tracing...");
+  console.log("Testing navigation...");
+  await page.goto("http://127.0.0.1:8888/index.html", { waitUntil: "networkidle" });
+  await page.waitForTimeout(2000);
 
-await page.goto("http://127.0.0.1:8888/index.html", { waitUntil: "networkidle" });
-await page.waitForTimeout(2000);
-
-console.log("Clicking writing link...");
-
-// Use force: true to bypass any click interception
-const clickResult = await page.evaluate(async () => {
-  const links = Array.from(document.querySelectorAll("a[href=writing.html]"));
-  if (links.length === 0) return { error: "No links found" };
-  
-  const link = links[0];
-  console.log("Found link:", link.textContent.trim());
-  
-  // Simulate the click ourselves
-  const event = new MouseEvent("click", {
-    bubbles: true,
-    cancelable: true,
-    view: window
+  const result = await page.evaluate(async () => {
+    const links = Array.from(document.querySelectorAll("a[href=\"writing.html\"]"));
+    if (links.length === 0) return { error: "No links" };
+    const link = links[0];
+    const event = new MouseEvent("click", { bubbles: true, cancelable: true, view: window });
+    link.dispatchEvent(event);
+    await new Promise(r => setTimeout(r, 100));
+    return {
+      text: link.textContent.trim(),
+      isActive: window.pageTransition?.isActive,
+      destination: window.pageTransition?.destination
+    };
   });
-  
-  // Track if default was prevented
-  let defaultPrevented = false;
-  const originalPreventDefault = event.preventDefault.bind(event);
-  event.preventDefault = function() {
-    defaultPrevented = true;
-    originalPreventDefault();
-  };
-  
-  link.dispatchEvent(event);
-  
-  return {
-    linkText: link.textContent.trim(),
-    defaultPrevented: defaultPrevented,
-    isActive: window.pageTransition?.isActive,
-    destination: window.pageTransition?.destination
-  };
-});
 
-console.log("Click result:", JSON.stringify(clickResult, null, 2));
+  console.log("After click:", result);
+  await page.waitForTimeout(2000);
+  const final = await page.evaluate(() => ({ url: window.location.href }));
+  console.log("Final:", final);
 
-await page.waitForTimeout(2000);
+  await browser.close();
+}
 
-const finalState = await page.evaluate(() => ({
-  url: window.location.href,
-  isActive: window.pageTransition?.isActive
-}));
-
-console.log("Final state:", JSON.stringify(finalState, null, 2));
-
-await browser.close();
-console.log("Done.");
-
+test().catch(console.error);
