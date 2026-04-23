@@ -78,8 +78,7 @@
       ],
       "readTime": "7 min",
       "featured": false,
-      "externalLink": "https://www.twilio.com/blog/2016/10/stream-youtube-videos-synchronously-remotely-with-twilio-sync.html",
-      "content": "<article class=\"article-content\">\n<h2>The Problem: Long Distance Movie Nights</h2>\n<p>My partner and I were in a long-distance relationship. We'd try to watch movies \"together\"\u2014pressing play at the same time over a phone call. It never worked. One person would laugh at a joke 3 seconds before the other. The experience was broken.</p>\n<blockquote>\n<p>There had to be a better way than \"3... 2... 1... play!\"</p>\n</blockquote>\n\n<h2>The Solution: Twilio Sync</h2>\n<p>Twilio had just launched Sync\u2014a real-time state synchronization service. Instead of building WebSocket infrastructure, I could use Sync to keep video state in perfect alignment across browsers.</p>\n<p>The architecture was elegant:</p>\n<ol>\n<li>Each user installs a Chrome extension on YouTube</li>\n<li>Extension joins a Sync document (essentially a shared JSON object)</li>\n<li>When User A pauses, the pause event is written to Sync</li>\n<li>Sync broadcasts to all connected clients</li>\n<li>User B's video pauses at the exact same timestamp</li>\n</ol>\n\n<h2>Chrome Extension Architecture</h2>\n<p>The extension uses content scripts to inject into YouTube pages:</p>\n<pre><code class=\"language-javascript\">// content.js - injected into YouTube pages\nconst video = document.querySelector('video');\n\n// Listen for local video events\nvideo.addEventListener('play', () =&gt; {\n  syncDocument.update({\n    action: 'play',\n    timestamp: video.currentTime,\n    time: Date.now()\n  });\n});\n\nvideo.addEventListener('pause', () =&gt; {\n  syncDocument.update({\n    action: 'pause',\n    timestamp: video.currentTime\n  });\n});\n\n// Listen for remote events\nsyncDocument.on('updated', (data) =&gt; {\n  if (data.action === 'play') {\n    const latency = Date.now() - data.time;\n    video.currentTime = data.timestamp + (latency / 1000);\n    video.play();\n  } else if (data.action === 'pause') {\n    video.pause();\n    video.currentTime = data.timestamp;\n  }\n});</code></pre>\n\n<h2>Handling Latency</h2>\n<p>The tricky part: network latency. When User A presses play, it takes time for that message to reach User B. By the time User B receives it, User A's video has advanced.</p>\n<p>The solution: timestamp every action and adjust on receipt. If User A sends a play at T=0 with timestamp 30.5s, and User B receives it 100ms later, User B jumps to 30.6s before playing.</p>\n\n<h2>The Result</h2>\n<p>syncvid.io was born. Friends could create rooms, share links, and watch together. The sync was tight\u2014usually within 50ms. Good enough that you could laugh at jokes simultaneously.</p>\n<p>The Twilio blog <a href=\"https://www.twilio.com/blog/2016/10/stream-youtube-videos-synchronously-remotely-with-twilio-sync.html\" target=\"_blank\" rel=\"noopener\">published a full writeup</a> of the implementation.</p>\n</article>"
+      "content": "<article class=\"article-content\">\n<h2>The Problem: Long Distance Movie Nights</h2>\n<p>My partner and I were in a long-distance relationship. We'd try to watch movies \"together\"\u2014pressing play at the same time over a phone call. It never worked. One person would laugh at a joke 3 seconds before the other. The experience was broken.</p>\n<blockquote>\n<p>There had to be a better way than \"3... 2... 1... play!\"</p>\n</blockquote>\n\n<h2>The Solution: Twilio Sync</h2>\n<p>Twilio had just launched Sync\u2014a real-time state synchronization service. Instead of building WebSocket infrastructure, I could use Sync to keep video state in perfect alignment across browsers.</p>\n<p>The architecture was elegant:</p>\n<ol>\n<li>Each user installs a Chrome extension on YouTube</li>\n<li>Extension joins a Sync document (essentially a shared JSON object)</li>\n<li>When User A pauses, the pause event is written to Sync</li>\n<li>Sync broadcasts to all connected clients</li>\n<li>User B's video pauses at the exact same timestamp</li>\n</ol>\n\n<h2>Chrome Extension Architecture</h2>\n<p>The extension uses content scripts to inject into YouTube pages:</p>\n<pre><code class=\"language-javascript\">// content.js - injected into YouTube pages\nconst video = document.querySelector('video');\n\n// Listen for local video events\nvideo.addEventListener('play', () =&gt; {\n  syncDocument.update({\n    action: 'play',\n    timestamp: video.currentTime,\n    time: Date.now()\n  });\n});\n\nvideo.addEventListener('pause', () =&gt; {\n  syncDocument.update({\n    action: 'pause',\n    timestamp: video.currentTime\n  });\n});\n\n// Listen for remote events\nsyncDocument.on('updated', (data) =&gt; {\n  if (data.action === 'play') {\n    const latency = Date.now() - data.time;\n    video.currentTime = data.timestamp + (latency / 1000);\n    video.play();\n  } else if (data.action === 'pause') {\n    video.pause();\n    video.currentTime = data.timestamp;\n  }\n});</code></pre>\n\n<h2>Handling Latency</h2>\n<p>The tricky part: network latency. When User A presses play, it takes time for that message to reach User B. By the time User B receives it, User A's video has advanced.</p>\n<p>The solution: timestamp every action and adjust on receipt. If User A sends a play at T=0 with timestamp 30.5s, and User B receives it 100ms later, User B jumps to 30.6s before playing.</p>\n\n<h2>The Result</h2>\n<p>syncvid.io was born. Friends could create rooms, share links, and watch together. The sync was tight\u2014usually within 50ms. Good enough that you could laugh at jokes simultaneously.</p>\n</article>"
     },
     {
       "slug": "teaching-git-500-students",
@@ -175,8 +174,8 @@
       ],
       "readTime": "8 min",
       "featured": false,
-      "externalLink": "https://cosine.ai/blog/breaking-free-from-vs-code",
-      "content": "<article class=\"article-content\">\n<p>VS Code has become the de facto standard for modern development, but it was built for a pre-AI era. This article explores the fundamental architectural limitations of traditional IDEs when it comes to AI integration, and why building AI-native developer tools from the ground up offers a fundamentally better experience.</p>\n<p><a href=\"https://cosine.ai/blog/breaking-free-from-vs-code\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+      "externalLink": "https://cosine.sh/blog/ai-native-devtools-vs-code-alternative-genie/",
+      "content": "<article class=\"article-content\">\n<p>VS Code has become the de facto standard for modern development, but it was built for a pre-AI era. This article explores the fundamental architectural limitations of traditional IDEs when it comes to AI integration, and why building AI-native developer tools from the ground up offers a fundamentally better experience.</p>\n<p><a href=\"https://cosine.sh/blog/ai-native-devtools-vs-code-alternative-genie/\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
     },
     {
       "slug": "dont-sideload-ai-mcp",
@@ -192,8 +191,8 @@
       ],
       "readTime": "7 min",
       "featured": false,
-      "externalLink": "https://cosine.ai/blog/dont-sideload-ai-mcp",
-      "content": "<article class=\"article-content\">\n<p>The Model Context Protocol (MCP) has gained traction as a way to connect AI models with external tools and data sources. However, this article argues that sideloading AI through protocol abstractions creates unnecessary complexity and misses the opportunity for deeper, more integrated AI experiences.</p>\n<p><a href=\"https://cosine.ai/blog/dont-sideload-ai-mcp\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+      "externalLink": "https://cosine.sh/blog/ditch-mcp-for-native-ai-integrations/",
+      "content": "<article class=\"article-content\">\n<p>The Model Context Protocol (MCP) has gained traction as a way to connect AI models with external tools and data sources. However, this article argues that sideloading AI through protocol abstractions creates unnecessary complexity and misses the opportunity for deeper, more integrated AI experiences.</p>\n<p><a href=\"https://cosine.sh/blog/ditch-mcp-for-native-ai-integrations/\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
     },
     {
       "slug": "you-should-build-multi-agents",
@@ -209,8 +208,8 @@
       ],
       "readTime": "6 min",
       "featured": false,
-      "externalLink": "https://cosine.ai/blog/you-should-build-multi-agents",
-      "content": "<article class=\"article-content\">\n<p>Single-agent AI systems are reaching their limits. This article makes the case for multi-agent architectures where specialized agents collaborate on complex tasks, sharing context and reasoning together to achieve outcomes no single agent could accomplish alone.</p>\n<p><a href=\"https://cosine.ai/blog/you-should-build-multi-agents\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+      "externalLink": "https://cosine.sh/blog/why-you-should-build-multi-agent-ai/",
+      "content": "<article class=\"article-content\">\n<p>Single-agent AI systems are reaching their limits. This article makes the case for multi-agent architectures where specialized agents collaborate on complex tasks, sharing context and reasoning together to achieve outcomes no single agent could accomplish alone.</p>\n<p><a href=\"https://cosine.sh/blog/why-you-should-build-multi-agent-ai/\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
     },
     {
       "slug": "parallelising-software-development",
@@ -226,8 +225,8 @@
       ],
       "readTime": "10 min",
       "featured": false,
-      "externalLink": "https://cosine.ai/blog/parallelising-software-development",
-      "content": "<article class=\"article-content\">\n<p>Software development has always been fundamentally serial\u2014one engineer, one task, one commit at a time. This article explores how AI agents are changing that paradigm, enabling true parallel development where multiple features can be built simultaneously with AI handling the coordination and integration challenges.</p>\n<p><a href=\"https://cosine.ai/blog/parallelising-software-development\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+      "externalLink": "https://cosine.sh/blog/parallelising-software-development-multi-agent-productivity/",
+      "content": "<article class=\"article-content\">\n<p>Software development has always been fundamentally serial\u2014one engineer, one task, one commit at a time. This article explores how AI agents are changing that paradigm, enabling true parallel development where multiple features can be built simultaneously with AI handling the coordination and integration challenges.</p>\n<p><a href=\"https://cosine.sh/blog/parallelising-software-development-multi-agent-productivity/\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
     },
     {
       "slug": "product-vs-tool-cohesive-engineering",
@@ -243,8 +242,8 @@
       ],
       "readTime": "8 min",
       "featured": false,
-      "externalLink": "https://cosine.ai/blog/product-vs-tool-cohesive-engineering",
-      "content": "<article class=\"article-content\">\n<p>There's a fundamental difference between building AI tools and building AI products. This article explores why cohesive, end-to-end engineered products consistently deliver better user experiences than assembled toolchains of point solutions, especially in the rapidly evolving AI landscape.</p>\n<p><a href=\"https://cosine.ai/blog/product-vs-tool-cohesive-engineering\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+      "externalLink": "https://cosine.sh/blog/product-vs-tool-cohesive-engineering/",
+      "content": "<article class=\"article-content\">\n<p>There's a fundamental difference between building AI tools and building AI products. This article explores why cohesive, end-to-end engineered products consistently deliver better user experiences than assembled toolchains of point solutions, especially in the rapidly evolving AI landscape.</p>\n<p><a href=\"https://cosine.sh/blog/product-vs-tool-cohesive-engineering/\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
     },
     {
       "slug": "building-coding-agent-enterprise",
@@ -260,8 +259,8 @@
       ],
       "readTime": "12 min",
       "featured": false,
-      "externalLink": "https://cosine.ai/blog/building-coding-agent-enterprise",
-      "content": "<article class=\"article-content\">\n<p>Enterprise AI adoption comes with unique challenges: security audits, compliance requirements, integration with existing systems, and the need for predictable reliability. This article shares lessons from building coding agents that satisfy these demanding enterprise requirements without sacrificing capability.</p>\n<p><a href=\"https://cosine.ai/blog/building-coding-agent-enterprise\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+      "externalLink": "https://cosine.sh/blog/secure-ai-coding-agent-for-enterprise/",
+      "content": "<article class=\"article-content\">\n<p>Enterprise AI adoption comes with unique challenges: security audits, compliance requirements, integration with existing systems, and the need for predictable reliability. This article shares lessons from building coding agents that satisfy these demanding enterprise requirements without sacrificing capability.</p>\n<p><a href=\"https://cosine.sh/blog/secure-ai-coding-agent-for-enterprise/\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
     },
     {
       "slug": "pricing-ai-coding-agents",
@@ -277,8 +276,8 @@
       ],
       "readTime": "7 min",
       "featured": false,
-      "externalLink": "https://cosine.ai/blog/pricing-ai-coding-agents",
-      "content": "<article class=\"article-content\">\n<p>Pay-per-token pricing made sense when AI was primarily used for content generation, but it creates misaligned incentives for coding agents. This article explores why value-based pricing models that charge for outcomes rather than compute are the future of AI coding tools.</p>\n<p><a href=\"https://cosine.ai/blog/pricing-ai-coding-agents\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+      "externalLink": "https://cosine.sh/blog/ai-coding-agent-pricing-task-vs-token/",
+      "content": "<article class=\"article-content\">\n<p>Pay-per-token pricing made sense when AI was primarily used for content generation, but it creates misaligned incentives for coding agents. This article explores why value-based pricing models that charge for outcomes rather than compute are the future of AI coding tools.</p>\n<p><a href=\"https://cosine.sh/blog/ai-coding-agent-pricing-task-vs-token/\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
     },
     {
       "slug": "cosine-for-vscode-returns",
@@ -294,8 +293,8 @@
       ],
       "readTime": "6 min",
       "featured": false,
-      "externalLink": "https://cosine.ai/blog/cosine-for-vscode-returns",
-      "content": "<article class=\"article-content\">\n<p>After reimagining our approach to AI-native development, Cosine returns to VS Code with a production-grade agent that brings the full power of our autonomous coding capabilities directly into the editor millions of developers use every day.</p>\n<p><a href=\"https://cosine.ai/blog/cosine-for-vscode-returns\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+      "externalLink": "https://cosine.sh/blog/cosine-vs-code-production-grade-agent/",
+      "content": "<article class=\"article-content\">\n<p>After reimagining our approach to AI-native development, Cosine returns to VS Code with a production-grade agent that brings the full power of our autonomous coding capabilities directly into the editor millions of developers use every day.</p>\n<p><a href=\"https://cosine.sh/blog/cosine-vs-code-production-grade-agent/\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
     },
     {
       "slug": "cosine-cloud",
@@ -311,8 +310,8 @@
       ],
       "readTime": "5 min",
       "featured": false,
-      "externalLink": "https://cosine.ai/blog/cosine-cloud",
-      "content": "<article class=\"article-content\">\n<p>Cosine Cloud provides the scalable infrastructure needed to run AI coding agents at production scale. This article introduces the platform architecture, deployment options, and how teams can leverage cloud-based AI agents for their development workflows.</p>\n<p><a href=\"https://cosine.ai/blog/cosine-cloud\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+      "externalLink": "https://cosine.sh/blog/cosine-cloud/",
+      "content": "<article class=\"article-content\">\n<p>Cosine Cloud provides the scalable infrastructure needed to run AI coding agents at production scale. This article introduces the platform architecture, deployment options, and how teams can leverage cloud-based AI agents for their development workflows.</p>\n<p><a href=\"https://cosine.sh/blog/cosine-cloud/\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
     },
     {
       "slug": "tomorrow-is-a-month-away",
@@ -328,8 +327,8 @@
       ],
       "readTime": "9 min",
       "featured": false,
-      "externalLink": "https://cosine.ai/blog/tomorrow-is-a-month-away",
-      "content": "<article class=\"article-content\">\n<p>Software estimation has been called 'the hardest problem in computer science.' This article examines why human estimates are so often wrong, and how AI agents that can analyze codebases, understand complexity, and learn from historical delivery data are helping teams estimate more accurately.</p>\n<p><a href=\"https://cosine.ai/blog/tomorrow-is-a-month-away\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+      "externalLink": "https://cosine.sh/blog/why-software-estimates-fail-and-how-ai-fixes-it/",
+      "content": "<article class=\"article-content\">\n<p>Software estimation has been called 'the hardest problem in computer science.' This article examines why human estimates are so often wrong, and how AI agents that can analyze codebases, understand complexity, and learn from historical delivery data are helping teams estimate more accurately.</p>\n<p><a href=\"https://cosine.sh/blog/why-software-estimates-fail-and-how-ai-fixes-it/\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
     },
     {
       "slug": "thriving-with-ai-generated-code",
@@ -345,8 +344,7 @@
       ],
       "readTime": "5 min",
       "featured": false,
-      "externalLink": "https://www.linkedin.com/pulse/thriving-ai-generated-code",
-      "content": "<article class=\"article-content\">\n<p>As AI-generated code becomes ubiquitous, developers need new skills and mindsets to thrive. This LinkedIn article explores practical approaches for reviewing AI code, maintaining code quality, and evolving your role when machines can write syntax faster than humans.</p>\n<p><a href=\"https://www.linkedin.com/pulse/thriving-ai-generated-code\" target=\"_blank\" rel=\"noopener\">Read the full article on LinkedIn</a></p>\n</article>"
+      "content": "<article class=\"article-content\">\n<p>As AI-generated code becomes ubiquitous, developers need new skills and mindsets to thrive. This LinkedIn article explores practical approaches for reviewing AI code, maintaining code quality, and evolving your role when machines can write syntax faster than humans.</p>\n</article>"
     },
     {
       "slug": "marrying-tooling-post-training-on-prem",
@@ -362,8 +360,7 @@
       ],
       "readTime": "8 min",
       "featured": false,
-      "externalLink": "https://www.linkedin.com/pulse/marrying-tooling-post-training-premises-ai-rollouts",
-      "content": "<article class=\"article-content\">\n<p>Organizations rolling out AI on-premises face unique challenges around infrastructure, security, and model customization. This article discusses why the marriage between developer tooling and post-training model optimization is critical for successful on-prem AI deployments.</p>\n<p><a href=\"https://www.linkedin.com/pulse/marrying-tooling-post-training-premises-ai-rollouts\" target=\"_blank\" rel=\"noopener\">Read the full article on LinkedIn</a></p>\n</article>"
+      "content": "<article class=\"article-content\">\n<p>Organizations rolling out AI on-premises face unique challenges around infrastructure, security, and model customization. This article discusses why the marriage between developer tooling and post-training model optimization is critical for successful on-prem AI deployments.</p>\n</article>"
     },
     {
       "slug": "remember-when-googling-was-skill",
@@ -379,8 +376,7 @@
       ],
       "readTime": "4 min",
       "featured": false,
-      "externalLink": "https://www.linkedin.com/pulse/remember-when-googling-was-skill",
-      "content": "<article class=\"article-content\">\n<p>There was a time when being good at Google was a genuine technical skill\u2014the ability to construct effective queries, filter results, and find obscure documentation. This reflective piece explores how AI is shifting the skill hierarchy and what 'good at finding information' means in an AI-assisted world.</p>\n<p><a href=\"https://www.linkedin.com/pulse/remember-when-googling-was-skill\" target=\"_blank\" rel=\"noopener\">Read the full article on LinkedIn</a></p>\n</article>"
+      "content": "<article class=\"article-content\">\n<p>There was a time when being good at Google was a genuine technical skill\u2014the ability to construct effective queries, filter results, and find obscure documentation. This reflective piece explores how AI is shifting the skill hierarchy and what 'good at finding information' means in an AI-assisted world.</p>\n</article>"
     },
     {
       "slug": "5-insights-pms-user-customizations",
@@ -396,8 +392,7 @@
       ],
       "readTime": "6 min",
       "featured": false,
-      "externalLink": "https://www.linkedin.com/pulse/5-insights-every-product-manager-should-learn-user",
-      "content": "<article class=\"article-content\">\n<p>Users often reveal their true needs through the customizations they create. This article distills five key insights product managers can glean from observing how users hack, extend, and personalize the products they use every day.</p>\n<p><a href=\"https://www.linkedin.com/pulse/5-insights-every-product-manager-should-learn-user\" target=\"_blank\" rel=\"noopener\">Read the full article on LinkedIn</a></p>\n</article>"
+      "content": "<article class=\"article-content\">\n<p>Users often reveal their true needs through the customizations they create. This article distills five key insights product managers can glean from observing how users hack, extend, and personalize the products they use every day.</p>\n</article>"
     },
     {
       "slug": "github-copilot-early-access",
@@ -413,8 +408,7 @@
       ],
       "readTime": "5 min",
       "featured": false,
-      "externalLink": "https://www.linkedin.com/pulse/i-got-early-access-githubs-new-ai",
-      "content": "<article class=\"article-content\">\n<p>Getting early access to new GitHub AI features provided an opportunity to evaluate where AI coding assistance is heading. This article shares initial impressions, strengths, limitations, and what it means for the future of developer tooling.</p>\n<p><a href=\"https://www.linkedin.com/pulse/i-got-early-access-githubs-new-ai\" target=\"_blank\" rel=\"noopener\">Read the full article on LinkedIn</a></p>\n</article>"
+      "content": "<article class=\"article-content\">\n<p>Getting early access to new GitHub AI features provided an opportunity to evaluate where AI coding assistance is heading. This article shares initial impressions, strengths, limitations, and what it means for the future of developer tooling.</p>\n</article>"
     },
     {
       "slug": "git-intro-workshop",
@@ -430,8 +424,7 @@
       ],
       "readTime": "60 min",
       "featured": false,
-      "externalLink": "https://www.youtube.com/playlist?list=PLm_PjC70JbErEjvwMQPBdKzE_vLDwA0E6",
-      "content": "<article class=\"article-content\">\n<p>A comprehensive video workshop series covering Git fundamentals. These recordings from 2017-2019 capture live teaching sessions with students, covering everything from basic commits to branching strategies and collaborative workflows.</p>\n<p><a href=\"https://www.youtube.com/playlist?list=PLm_PjC70JbErEjvwMQPBdKzE_vLDwA0E6\" target=\"_blank\" rel=\"noopener\">Watch the workshop series on YouTube</a></p>\n</article>"
+      "content": "<article class=\"article-content\">\n<p>A comprehensive video workshop series covering Git fundamentals. These recordings from 2017-2019 capture live teaching sessions with students, covering everything from basic commits to branching strategies and collaborative workflows.</p>\n</article>"
     },
     {
       "slug": "aws-reinvent-2025-fine-tuning-llms",
@@ -448,8 +441,7 @@
       ],
       "readTime": "45 min",
       "featured": false,
-      "externalLink": "https://www.youtube.com/watch?v=aws-reinvent-2025-llms",
-      "content": "<article class=\"article-content\">\n<p>Presented at AWS re:Invent 2025, this talk dives into the unique challenges of fine-tuning LLMs for multi-agent systems. Learn about training data curation, reward modeling for agent collaboration, and deployment strategies for orchestrated AI agents at scale.</p>\n<p><a href=\"https://www.youtube.com/watch?v=aws-reinvent-2025-llms\" target=\"_blank\" rel=\"noopener\">Watch the talk on YouTube</a></p>\n</article>"
+      "content": "<article class=\"article-content\">\n<p>Presented at AWS re:Invent 2025, this talk dives into the unique challenges of fine-tuning LLMs for multi-agent systems. Learn about training data curation, reward modeling for agent collaboration, and deployment strategies for orchestrated AI agents at scale.</p>\n</article>"
     },
     {
       "slug": "cosine-vscode-ai-teammate-demo",
@@ -466,8 +458,7 @@
       ],
       "readTime": "10 min",
       "featured": false,
-      "externalLink": "https://www.youtube.com/watch?v=cosine-vscode-demo",
-      "content": "<article class=\"article-content\">\n<p>This demo video showcases Cosine's AI teammate working within VS Code, demonstrating autonomous code generation, refactoring, testing, and code review capabilities in real-time.</p>\n<p><a href=\"https://www.youtube.com/watch?v=cosine-vscode-demo\" target=\"_blank\" rel=\"noopener\">Watch the demo on YouTube</a></p>\n</article>"
+      "content": "<article class=\"article-content\">\n<p>This demo video showcases Cosine's AI teammate working within VS Code, demonstrating autonomous code generation, refactoring, testing, and code review capabilities in real-time.</p>\n</article>"
     },
     {
       "slug": "nestjs-redis-streams",
@@ -484,8 +475,7 @@
       ],
       "readTime": "3 min",
       "featured": false,
-      "externalLink": "https://www.npmjs.com/package/nestjs-redis-streams",
-      "content": "<article class=\"article-content\">\n<p>nestjs-redis-streams is an open-source npm package that provides easy integration of Redis Streams into NestJS applications. It offers decorators, message handlers, and configuration utilities for building event-driven microservices with Redis as the message broker.</p>\n<p><a href=\"https://www.npmjs.com/package/nestjs-redis-streams\" target=\"_blank\" rel=\"noopener\">View on npm</a></p>\n</article>"
+      "content": "<article class=\"article-content\">\n<p>nestjs-redis-streams is an open-source npm package that provides easy integration of Redis Streams into NestJS applications. It offers decorators, message handlers, and configuration utilities for building event-driven microservices with Redis as the message broker.</p>\n</article>"
     },
     {
       "slug": "multi-agent-orchestration-reinvent",
