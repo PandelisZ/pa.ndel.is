@@ -147,12 +147,17 @@ var gridItems = document.querySelectorAll('.grid__item.readme');
 var modalTemplate = document.querySelector('.modalTemplate');
 var modalCode = document.querySelector('.modalTemplate > div.markdown');
 
+var setTranslateX = function setTranslateX(node, value) {
+  if (!node) return;
+  node.style.transform = "translateX(".concat(value, "px)");
+};
+
 var mastheadScroller = function mastheadScroller(scrollPosition) {
-  nameNode.style = "transform: translateX(-".concat(scrollPosition * 7, "px)");
-  subtitleNode.style = "transform: translateX(".concat(scrollPosition * 2, "px)");
-  profileHeaderText.style = "transform: translateX(-".concat(scrollPosition * 1.2, "px)");
-  projectsHeaderText.style = "transform: translateX(-".concat(scrollPosition * 1.2, "px)");
-  getInTouch.style = "transform: translateX(-".concat(scrollPosition * 2, "px)");
+  setTranslateX(nameNode, -(scrollPosition * 7));
+  setTranslateX(subtitleNode, scrollPosition * 2);
+  setTranslateX(profileHeaderText, -(scrollPosition * 1.2));
+  setTranslateX(projectsHeaderText, -(scrollPosition * 1.2));
+  setTranslateX(getInTouch, -(scrollPosition * 2));
 };
 
 var ticking = false;
@@ -1039,7 +1044,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56294" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55625" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -117,269 +117,178 @@ parcelRequire = (function (modules, cache, entry, globalName) {
   }
 
   return newRequire;
-})({"js/page-manager.js":[function(require,module,exports) {
+})({"js/writing.js":[function(require,module,exports) {
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+(function initWritingPageRenderer() {
+  var ARTICLE_DATA_URL = './articles.json';
 
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-/**
- * PageManager - internal navigation wrapper.
- *
- * Navigation intentionally stays as real document loads. The transition engine
- * provides the exit/entry animation around those loads, while page-specific
- * scripts continue to run normally on each destination.
- */
-var PageManager =
-/*#__PURE__*/
-function () {
-  function PageManager() {
-    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-    _classCallCheck(this, PageManager);
-
-    this.options = _objectSpread({
-      internalLinkAttribute: 'data-internal-link',
-      prefetch: true,
-      prefetchDelay: 90
-    }, options);
-    this.isNavigating = false;
-    this.prefetched = new Set();
-    this.prefetchTimer = null;
-    this.handleClick = this.handleClick.bind(this);
-    this.handlePointerOver = this.handlePointerOver.bind(this);
+  function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, function (char) {
+      return {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[char];
+    });
   }
 
-  _createClass(PageManager, [{
-    key: "init",
-    value: function init() {
-      document.addEventListener('click', this.handleClick, {
-        capture: true
-      });
+  function formatDate(dateString) {
+    var date = new Date("".concat(dateString, "T00:00:00"));
+    if (Number.isNaN(date.getTime())) return escapeHtml(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).toUpperCase();
+  }
 
-      if (this.options.prefetch) {
-        document.addEventListener('pointerover', this.handlePointerOver, {
-          capture: true
-        });
-      }
-
-      return this;
+  function getDomain(url) {
+    try {
+      return new URL(url).hostname.replace(/^www\./, '').toUpperCase();
+    } catch (error) {
+      return 'EXTERNAL';
     }
-  }, {
-    key: "destroy",
-    value: function destroy() {
-      document.removeEventListener('click', this.handleClick, {
-        capture: true
-      });
-      document.removeEventListener('pointerover', this.handlePointerOver, {
-        capture: true
-      });
-      clearTimeout(this.prefetchTimer);
-    }
-  }, {
-    key: "handleClick",
-    value: function handleClick(event) {
-      var link = event.target.closest('a');
-      if (!link || !this.shouldHandleLink(link, event)) return;
-      var url = new URL(link.href, window.location.href);
+  }
 
-      if (this.isSameDocumentHash(url)) {
-        return;
-      }
+  function getArticleHref(article) {
+    if (article.externalLink) return article.externalLink;
+    return "article.html?id=".concat(encodeURIComponent(article.slug));
+  }
 
-      event.preventDefault();
-      this.navigateTo(url.href, {
-        trigger: 'click',
-        element: link
-      });
-    }
-  }, {
-    key: "handlePointerOver",
-    value: function handlePointerOver(event) {
-      var _this = this;
+  function renderTags() {
+    var tags = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+    return tags.slice(0, 3).map(function (tag) {
+      return "<span class=\"writing-card__tag\">".concat(escapeHtml(tag), "</span>");
+    }).join('');
+  }
 
-      var link = event.target.closest('a');
-      if (!link || !this.isInternalLink(link)) return;
-      var url = new URL(link.href, window.location.href);
-      if (this.isSameDocumentHash(url)) return;
-      clearTimeout(this.prefetchTimer);
-      this.prefetchTimer = setTimeout(function () {
-        return _this.prefetch(url.href);
-      }, this.options.prefetchDelay);
-    }
-  }, {
-    key: "shouldHandleLink",
-    value: function shouldHandleLink(link, event) {
-      if (!this.isInternalLink(link)) return false;
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false;
-      if (link.hasAttribute('download')) return false;
-      if (link.getAttribute('target') === '_blank') return false;
-      return true;
-    }
-  }, {
-    key: "isInternalLink",
-    value: function isInternalLink(link) {
-      var href = link.getAttribute('href');
+  function renderArticleCard(article, index) {
+    var href = getArticleHref(article);
+    var isExternal = Boolean(article.externalLink);
+    var linkAttributes = isExternal ? 'target="_blank" rel="noopener"' : 'data-internal-link';
+    var linkLabel = isExternal ? "READ ON ".concat(getDomain(article.externalLink)) : 'READ PIECE';
+    return "\n      <article class=\"article-card writing-card glitch-target\" data-cursor=\"hover\" style=\"--card-index: ".concat(index, "\">\n        <div class=\"writing-card__rail\">\n          <span>").concat(String(index + 1).padStart(2, '0'), "</span>\n          <span>").concat(escapeHtml(article.readTime || article.category || 'WRITING'), "</span>\n        </div>\n        <div class=\"writing-card__meta\">\n          <span class=\"article-date\">").concat(formatDate(article.date), "</span>\n          <div class=\"article-tags\">").concat(renderTags(article.tags), "</div>\n        </div>\n        <h2 class=\"writing-card__title\">\n          <a href=\"").concat(escapeHtml(href), "\" ").concat(linkAttributes, ">").concat(escapeHtml(article.title), "</a>\n        </h2>\n        <p class=\"writing-card__excerpt\">").concat(escapeHtml(article.excerpt), "</p>\n        <a href=\"").concat(escapeHtml(href), "\" ").concat(linkAttributes, " class=\"read-more writing-card__link\" data-cursor=\"hover\">\n          ").concat(linkLabel, " &rarr;\n        </a>\n      </article>\n    ");
+  }
 
-      if (!href || href.startsWith('javascript:') || href.startsWith('mailto:') || href.startsWith('tel:')) {
-        return false;
-      }
+  function renderWritingPage() {
+    return _renderWritingPage.apply(this, arguments);
+  }
 
-      if (href.startsWith('#')) return false;
-      var url = new URL(href, window.location.href);
-      var isSameOrigin = url.origin === window.location.origin;
-      var isMarkedInternal = link.hasAttribute(this.options.internalLinkAttribute);
-      return isSameOrigin && (isMarkedInternal || this.isLocalDocument(url));
-    }
-  }, {
-    key: "isLocalDocument",
-    value: function isLocalDocument(url) {
-      var pathname = url.pathname;
-      return pathname === '/' || pathname.endsWith('.html') || !pathname.split('/').pop().includes('.');
-    }
-  }, {
-    key: "isSameDocumentHash",
-    value: function isSameDocumentHash(url) {
-      return url.pathname === window.location.pathname && url.search === window.location.search && Boolean(url.hash);
-    }
-  }, {
-    key: "navigateTo",
-    value: function () {
-      var _navigateTo = _asyncToGenerator(
-      /*#__PURE__*/
-      regeneratorRuntime.mark(function _callee(url) {
-        var options,
-            transition,
-            _args = arguments;
-        return regeneratorRuntime.wrap(function _callee$(_context) {
-          while (1) {
-            switch (_context.prev = _context.next) {
-              case 0:
-                options = _args.length > 1 && _args[1] !== undefined ? _args[1] : {};
+  function _renderWritingPage() {
+    _renderWritingPage = _asyncToGenerator(
+    /*#__PURE__*/
+    regeneratorRuntime.mark(function _callee() {
+      var root,
+          articleGrid,
+          pageInfo,
+          response,
+          data,
+          articles,
+          _args = arguments;
+      return regeneratorRuntime.wrap(function _callee$(_context) {
+        while (1) {
+          switch (_context.prev = _context.next) {
+            case 0:
+              root = _args.length > 0 && _args[0] !== undefined ? _args[0] : document;
+              articleGrid = root.querySelector('#article-grid');
+              pageInfo = root.querySelector('#page-info');
 
-                if (!this.isNavigating) {
-                  _context.next = 3;
-                  break;
-                }
-
-                return _context.abrupt("return");
-
-              case 3:
-                this.isNavigating = true;
-                _context.prev = 4;
-                transition = this.getTransition();
-
-                if (!(transition && transition.ready && typeof transition.transitionTo === 'function')) {
-                  _context.next = 10;
-                  break;
-                }
-
-                _context.next = 9;
-                return transition.transitionTo(url, options);
-
-              case 9:
-                return _context.abrupt("return");
-
-              case 10:
-                window.location.href = url;
-                _context.next = 17;
+              if (articleGrid) {
+                _context.next = 5;
                 break;
+              }
 
-              case 13:
-                _context.prev = 13;
-                _context.t0 = _context["catch"](4);
-                console.error('[PageManager] Navigation failed, falling back to hard navigation', _context.t0);
-                window.location.href = url;
+              return _context.abrupt("return");
 
-              case 17:
-              case "end":
-                return _context.stop();
-            }
-          }
-        }, _callee, this, [[4, 13]]);
-      }));
+            case 5:
+              articleGrid.dataset.state = 'loading';
+              articleGrid.innerHTML = '<div class="writing-state">LOADING WRITING INDEX</div>';
+              _context.prev = 7;
+              _context.next = 10;
+              return fetch(ARTICLE_DATA_URL);
 
-      function navigateTo(_x) {
-        return _navigateTo.apply(this, arguments);
-      }
+            case 10:
+              response = _context.sent;
 
-      return navigateTo;
-    }()
-  }, {
-    key: "getTransition",
-    value: function getTransition() {
-      if (window.pageTransition && window.pageTransition.ready) {
-        return window.pageTransition;
-      }
+              if (response.ok) {
+                _context.next = 13;
+                break;
+              }
 
-      if (typeof window.initPageTransitions === 'function') {
-        return window.initPageTransitions();
-      }
+              throw new Error("HTTP ".concat(response.status));
 
-      return null;
-    }
-  }, {
-    key: "prefetch",
-    value: function () {
-      var _prefetch = _asyncToGenerator(
-      /*#__PURE__*/
-      regeneratorRuntime.mark(function _callee2(url) {
-        var link;
-        return regeneratorRuntime.wrap(function _callee2$(_context2) {
-          while (1) {
-            switch (_context2.prev = _context2.next) {
-              case 0:
-                if (!this.prefetched.has(url)) {
-                  _context2.next = 2;
-                  break;
+            case 13:
+              _context.next = 15;
+              return response.json();
+
+            case 15:
+              data = _context.sent;
+              articles = (data.articles || []).filter(function (article) {
+                return article && article.title && (article.slug || article.externalLink);
+              }).sort(function (a, b) {
+                return new Date(b.date) - new Date(a.date);
+              });
+
+              if (articles.length) {
+                _context.next = 22;
+                break;
+              }
+
+              articleGrid.dataset.state = 'empty';
+              articleGrid.innerHTML = '<div class="writing-state">NO WRITING FOUND</div>';
+              if (pageInfo) pageInfo.textContent = 'SHOWING 0 OF 0';
+              return _context.abrupt("return");
+
+            case 22:
+              articleGrid.dataset.state = 'ready';
+              articleGrid.innerHTML = articles.map(renderArticleCard).join('');
+
+              if (pageInfo) {
+                pageInfo.textContent = "SHOWING 1-".concat(articles.length, " OF ").concat(articles.length);
+              }
+
+              document.dispatchEvent(new CustomEvent('contentloaded', {
+                detail: {
+                  type: 'writing',
+                  count: articles.length
                 }
+              }));
+              _context.next = 34;
+              break;
 
-                return _context2.abrupt("return");
+            case 28:
+              _context.prev = 28;
+              _context.t0 = _context["catch"](7);
+              console.error('[Writing] Error loading articles', _context.t0);
+              articleGrid.dataset.state = 'error';
+              articleGrid.innerHTML = '<div class="writing-state">ERROR LOADING WRITING</div>';
+              if (pageInfo) pageInfo.textContent = 'WRITING INDEX UNAVAILABLE';
 
-              case 2:
-                this.prefetched.add(url);
-
-                try {
-                  link = document.createElement('link');
-                  link.rel = 'prefetch';
-                  link.href = url;
-                  document.head.appendChild(link);
-                } catch (error) {
-                  this.prefetched.delete(url);
-                }
-
-              case 4:
-              case "end":
-                return _context2.stop();
-            }
+            case 34:
+            case "end":
+              return _context.stop();
           }
-        }, _callee2, this);
-      }));
+        }
+      }, _callee, null, [[7, 28]]);
+    }));
+    return _renderWritingPage.apply(this, arguments);
+  }
 
-      function prefetch(_x2) {
-        return _prefetch.apply(this, arguments);
-      }
+  window.renderWritingPage = renderWritingPage;
 
-      return prefetch;
-    }()
-  }]);
-
-  return PageManager;
-}();
-
-window.PageManager = PageManager;
-window.pageManager = new PageManager().init();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+      return renderWritingPage();
+    });
+  } else {
+    renderWritingPage();
+  }
+})();
 },{}],"node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
@@ -584,5 +493,5 @@ function hmrAcceptRun(bundle, id) {
     return true;
   }
 }
-},{}]},{},["node_modules/parcel/src/builtins/hmr-runtime.js","js/page-manager.js"], null)
-//# sourceMappingURL=/page-manager.f077bc5b.js.map
+},{}]},{},["node_modules/parcel/src/builtins/hmr-runtime.js","js/writing.js"], null)
+//# sourceMappingURL=/writing.bdb3f3f7.js.map

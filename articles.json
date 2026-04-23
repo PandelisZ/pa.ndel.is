@@ -1,0 +1,556 @@
+{
+  "articles": [
+    {
+      "slug": "building-genie",
+      "title": "Building Genie: Lessons from Shipping an Autonomous AI Engineer",
+      "excerpt": "What happens when you try to build an AI that writes production code without human supervision? We shipped Genie at Cosine AI and learned hard lessons about context windows, agent reliability, and the tyranny of synthetic data.",
+      "date": "2025-03-15",
+      "category": "AI Engineering",
+      "tags": [
+        "AI",
+        "Engineering",
+        "Agents",
+        "LLM"
+      ],
+      "readTime": "12 min",
+      "featured": true,
+      "content": "<article class=\"article-content\">\n<h2>The Promise and the Problem</h2>\n<p>In late 2024, we set out to build <code>Genie</code>: an autonomous AI software engineer that could read a codebase, understand requirements, and ship production code. Not a copilot. Not an assistant. An agent that actually commits and pushes.</p>\n<p>The theory was simple: give an LLM access to a repository, a set of tools (read file, write file, run tests, grep), and enough reasoning capability to plan and execute. The reality was a gauntlet of edge cases, hallucinations, and the fundamental limitations of current LLM architecture.</p>\n\n<h2>Context Windows Are the Bottleneck</h2>\n<p>Here's the brutal truth: modern LLMs have context windows measured in hundreds of thousands of tokens. That sounds like a lot until you're dealing with a production codebase.</p>\n<blockquote>\n<p>A 500K token context window sounds massive. Then you try to load a moderate-sized repo and realize you've blown past 2M tokens before you've even started reasoning.</p>\n</blockquote>\n<p>We spent months on context compression strategies. Summary trees, relevance scoring, repository indexing. The breakthrough came when we stopped trying to feed the entire codebase into every turn and instead built an agent that could <em>ask</em> for what it needed.</p>\n\n<h2>Synthetic Data: Necessary Evil</h2>\n<p>To train Genie to reason about code changes, we needed training data. Lots of it. Real commit histories are messy, noisy, full of \"fix typo\" and \"wip\". Synthetic data promised clean, curated examples of proper software engineering.</p>\n<p>But synthetic data has a death spiral:</p>\n<ul>\n<li>Your model generates training data</li>\n<li>You train on that data</li>\n<li>Your model gets slightly worse at the edges</li>\n<li>You generate more data to compensate</li>\n<li>Repeat until your model is a pale imitation of itself</li>\n</ul>\n<p>We had to implement strict verification pipelines. Every synthetic example had to compile, pass tests, and be validated by a separate judge model. The cost was enormous. The alternative was a model that confidently generated broken code.</p>\n\n<h2>The Reliability Tax</h2>\n<p>Language models are probabilistic. Software engineering is deterministic. This mismatch is the core tension in autonomous coding agents.</p>\n<p>When Genie had a 95% success rate on simple tasks, we celebrated. Then we realized that meant 1 in 20 commits would need human intervention. At scale, that's unsustainable. We built rollback mechanisms, sandboxed execution environments, and multiple verification layers. Each added latency. Each reduced the \"autonomous\" part of the equation.</p>\n\n<h2>What Actually Worked</h2>\n<p>After a year of iteration, the architecture that emerged:</p>\n<ol>\n<li><strong>Hierarchical Planning:</strong> Break tasks into milestones, milestones into steps, steps into tool calls</li>\n<li><strong>Speculative Execution:</strong> Run tests <em>before</em> committing, catch errors early</li>\n<li><strong>Human-in-the-Loop Gates:</strong> High-stakes operations (deletions, refactors) require approval</li>\n<li><strong>Continuous Learning:</strong> Every failure becomes training data for the next iteration</li>\n</ol>\n\n<h2>The Road Ahead</h2>\n<p>Genie shipped. It writes code, it commits, it sometimes even gets it right. But the gap between \"sometimes right\" and \"reliable engineer\" is vast. We're not there yet. The next frontier isn't bigger models\u2014it's better tooling, better context management, and better understanding of when to ask for help.</p>\n<p>The autonomous future is coming. It's just going to take longer than the hype suggested.</p>\n</article>"
+    },
+    {
+      "slug": "jalla-universal-llm-middleware",
+      "title": "jalla: Universal LLM Middleware in Go",
+      "excerpt": "Switching between OpenAI, Anthropic, and Gemini shouldn't require rewriting your codebase. jalla is a single binary that provides an OpenAI-compatible API for every major LLM provider.",
+      "date": "2024-08-22",
+      "category": "Go",
+      "tags": [
+        "Go",
+        "AI",
+        "API",
+        "LLM"
+      ],
+      "readTime": "8 min",
+      "featured": true,
+      "content": "<article class=\"article-content\">\n<h2>The Provider Fragmentation Problem</h2>\n<p>You start with OpenAI. GPT-4 works great. Then Claude drops and suddenly it's better at reasoning. Then Gemini 1.5 Pro arrives with a 2M token context window. Your code is now a mess of different client libraries, different request formats, different response shapes.</p>\n<blockquote>\n<p>Every provider implements their own API. They're all roughly the same, but different enough to break your code.</p>\n</blockquote>\n<p>We needed a universal adapter. One endpoint. One request format. Switch providers by changing a config flag.</p>\n\n<h2>Architecture: The Adapter Pattern at Scale</h2>\n<p>jalla is built around a simple interface:</p>\n<pre><code class=\"language-go\">type Provider interface {\n    Complete(ctx context.Context, req CompletionRequest) (*CompletionResponse, error)\n    StreamComplete(ctx context.Context, req CompletionRequest) (chan StreamChunk, error)\n    Embed(ctx context.Context, req EmbeddingRequest) (*EmbeddingResponse, error)\n}</code></pre>\n<p>Each provider implements this interface, translating between OpenAI's request/response format and their native APIs. The HTTP layer never knows which provider it's talking to.</p>\n\n<h2>Go Implementation</h2>\n<p>The core translation layer for Anthropic looks like this:</p>\n<pre><code class=\"language-go\">func (a *AnthropicAdapter) Complete(ctx context.Context, req CompletionRequest) (*CompletionResponse, error) {\n    // Convert OpenAI messages to Anthropic format\n    anthropicReq := anthropic.MessagesRequest{\n        Model:     mapModel(req.Model),\n        MaxTokens: req.MaxTokens,\n        Messages:  convertMessages(req.Messages),\n        System:    extractSystem(req.Messages),\n    }\n    \n    resp, err := a.client.CreateMessages(ctx, anthropicReq)\n    if err != nil {\n        return nil, fmt.Errorf(\"anthropic api error: %w\", err)\n    }\n    \n    // Convert back to OpenAI format\n    return &amp;CompletionResponse{\n        ID:      resp.ID,\n        Object:  \"chat.completion\",\n        Created: time.Now().Unix(),\n        Model:   req.Model,\n        Choices: []Choice{{\n            Index: 0,\n            Message: Message{\n                Role:    \"assistant\",\n                Content: resp.Content[0].Text,\n            },\n            FinishReason: string(resp.StopReason),\n        }},\n    }, nil\n}</code></pre>\n\n<h2>Why Go?</h2>\n<p>Go's concurrency model is perfect for this. Thousands of concurrent streams, each handled by a lightweight goroutine. No callback hell. No event loops. Just clean, blocking code that the runtime schedules efficiently.</p>\n<p>The binary is a single static executable. No runtime dependencies. No Python environment hell. Deploy it anywhere.</p>\n\n<h2>Usage</h2>\n<pre><code class=\"language-bash\"># Point at jalla instead of OpenAI\nexport OPENAI_BASE_URL=http://localhost:8080/v1\nexport OPENAI_API_KEY=jalla-api-key\n\n# Use any OpenAI-compatible client\ncurl http://localhost:8080/v1/chat/completions \\\n  -H \"Authorization: Bearer $OPENAI_API_KEY\" \\\n  -d '{\n    \"model\": \"claude-3-5-sonnet\",\n    \"messages\": [{\"role\": \"user\", \"content\": \"Hello\"}]\n  }'</code></pre>\n\n<h2>Production Hardening</h2>\n<p>Real deployments need more than just translation:</p>\n<ul>\n<li><strong>Rate Limiting:</strong> Token bucket per API key, per model, per IP</li>\n<li><strong>Retry Logic:</strong> Exponential backoff with jitter for provider failures</li>\n<li><strong>Circuit Breakers:</strong> Fail fast when a provider is down</li>\n<li><strong>Streaming:</strong> SSE streams that multiplex multiple provider connections</li>\n</ul>\n<p>jalla handles all of this transparently. Your application code stays clean.</p>\n\n<h2>The Result</h2>\n<p>Switching from GPT-4 to Claude to Gemini is now a configuration change. A/B test models in production. Route high-context tasks to Gemini, reasoning tasks to Claude, cost-sensitive tasks to local models. One codebase, infinite flexibility.</p>\n<p>Sometimes the most valuable code is the code that disappears.</p>\n</article>"
+    },
+    {
+      "slug": "beamline-event-streaming",
+      "title": "beamline: Event Streaming at Scale",
+      "excerpt": "Kafka wasn't enough. When you're pushing 10M events per second with sub-10ms latency requirements, you need something purpose-built. This is how we built beamline in Go.",
+      "date": "2024-05-10",
+      "category": "Infrastructure",
+      "tags": [
+        "Go",
+        "Streaming",
+        "Infrastructure",
+        "Kafka"
+      ],
+      "readTime": "10 min",
+      "featured": true,
+      "content": "<article class=\"article-content\">\n<h2>Why Kafka Failed Us</h2>\n<p>Kafka is a masterpiece of engineering. It handles millions of messages, provides strong durability guarantees, and has an ecosystem to match. But it's designed for log storage, not real-time event distribution.</p>\n<p>Our requirements were different:</p>\n<ul>\n<li>10M+ events per second sustained throughput</li>\n<li>Sub-10ms end-to-end latency (p99)</li>\n<li>Dynamic fan-out: one event to thousands of consumers</li>\n<li>No persistence: events are ephemeral, loss is acceptable</li>\n</ul>\n<blockquote>\n<p>We tried to bend Kafka to our will. We tweaked batch sizes, partition counts, consumer configurations. At 5M events/sec, latency spiked to 200ms. The JVM garbage collector was fighting us. We needed a different approach.</p>\n</blockquote>\n\n<h2>Design Principles</h2>\n<p>beamline is built on three core ideas:</p>\n<ol>\n<li><strong>Zero-copy networking:</strong> Events touch memory once, then hit the wire</li>\n<li><strong>Lock-free data structures:</strong> No mutex contention on the hot path</li>\n<li><strong>NUMA-aware allocation:</strong> Pin goroutines to cores, eliminate cache thrashing</li>\n</ol>\n\n<h2>The Architecture</h2>\n<p>A beamline cluster consists of brokers and routers. Brokers handle ingestion. Routers handle distribution. The separation allows independent scaling.</p>\n<pre><code class=\"language-go\">// Producer publishes to any broker\nproducer.Publish(event, routingKey)\n\n// Broker stores in memory-mapped ring buffer\nbroker.ingest(event)\n\n// Router subscribes to brokers, fans out to consumers\nrouter.subscribe(pattern, consumerChan)\n\n// Consumer receives filtered events\nfor event := range consumerChan {\n    process(event)\n}</code></pre>\n\n<h2>Ring Buffers and Cache Lines</h2>\n<p>The heart of beamline is a lock-free ring buffer implementation optimized for x86 cache lines (64 bytes):</p>\n<pre><code class=\"language-go\">type RingBuffer struct {\n    buffer   []Event\n    writeIdx atomic.Uint64\n    readIdx  atomic.Uint64\n    mask     uint64\n}\n\nfunc (r *RingBuffer) Write(e Event) bool {\n    idx := r.writeIdx.Add(1) - 1\n    pos := idx &amp; r.mask\n    \n    // Spin until slot is free (lock-free)\n    for !r.buffer[pos].IsEmpty() {\n        runtime.Gosched()\n    }\n    \n    r.buffer[pos] = e\n    return true\n}</code></pre>\n<p>Each event is exactly 64 bytes, aligning perfectly with cache lines. False sharing eliminated. Contention reduced to atomic increments.</p>\n\n<h2>Networking: epoll on Steroids</h2>\n<p>Standard Go net/http couldn't keep up. We built on <code>gnet</code>\u2014an event-driven networking framework using epoll on Linux and kqueue on BSD.</p>\n<p>A single beamline broker handles 2M events/sec per core. With 16 cores, that's 32M events/sec per machine. We run 3 brokers for redundancy.</p>\n\n<h2>Latency Distribution</h2>\n<p>In production:</p>\n<ul>\n<li>p50 latency: 2.3ms</li>\n<li>p99 latency: 8.7ms</li>\n<li>p99.9 latency: 15ms</li>\n</ul>\n<p>The p99.9 outliers are usually GC pauses in consumer applications, not beamline itself.</p>\n\n<h2>When to Use beamline</h2>\n<p>beamline is not a Kafka replacement. It makes tradeoffs:</p>\n<table>\n<tr><th>Feature</th><th>Kafka</th><th>beamline</th></tr>\n<tr><td>Durability</td><td>Strong (disk)</td><td>None (memory)</td></tr>\n<tr><td>Latency</td><td>100ms+</td><td>&lt;10ms</td></tr>\n<tr><td>Throughput</td><td>High</td><td>Very High</td></tr>\n<tr><td>Consumer groups</td><td>Yes</td><td>No</td></tr>\n<tr><td>Replay</td><td>Yes</td><td>No</td></tr>\n</table>\n<p>Use Kafka when you need durability. Use beamline when you need speed and can tolerate loss.</p>\n\n<h2>Lessons Learned</h2>\n<p>Building high-performance systems in Go requires understanding the runtime. The garbage collector is your friend until it isn't. Avoid allocations on hot paths. Pool your objects. Profile relentlessly.</p>\n<p>Sometimes the right tool doesn't exist. Build it.</p>\n</article>"
+    },
+    {
+      "slug": "gut-gomputer-use",
+      "title": "gut: Building Gomputer Use Tooling",
+      "excerpt": "Computer use for AI agents is the new frontier. gut is a Go-based framework for building AI agents that can see screens, click buttons, and type like humans.",
+      "date": "2025-01-20",
+      "category": "AI Infrastructure",
+      "tags": [
+        "Go",
+        "AI",
+        "Agents",
+        "Automation"
+      ],
+      "readTime": "9 min",
+      "featured": true,
+      "content": "<article class=\"article-content\">\n<h2>The Computer Use Revolution</h2>\n<p>LLMs can write code, but can they <em>use</em> software? The computer use paradigm\u2014giving AI agents the ability to see screens and interact with UIs\u2014opens entirely new capabilities. Customer support that actually clicks through your app. Automated testing that navigates like a real user. Data entry bots that work with legacy systems.</p>\n<blockquote>\n<p>Computer use isn't about replacing human judgment. It's about extending AI from the text domain into the visual, interactive world.</p>\n</blockquote>\n<p>Most computer use implementations are Python-based, resource-heavy, and hard to deploy. We built <code>gut</code> in Go for production environments.</p>\n\n<h2>Core Abstractions</h2>\n<p>gut provides three primitives:</p>\n<pre><code class=\"language-go\">// Computer represents a virtual desktop\ntype Computer interface {\n    Screenshot(ctx context.Context) (*Screenshot, error)\n    Click(x, y int) error\n    Type(text string) error\n    Key(key string) error\n    Scroll(direction Direction, amount int) error\n}\n\n// Agent reasons about actions\ntype Agent interface {\n    Observe(ctx context.Context, screenshot *Screenshot) (*Action, error)\n    Learn(experience Experience) error\n}\n\n// Task is a high-level goal\ntype Task interface {\n    Done(screenshot *Screenshot) (bool, error)\n    Reward() float64\n}</code></pre>\n\n<h2>Vision: Beyond OCR</h2>\n<p>Early computer use systems relied on OCR\u2014extracting text from screenshots and reasoning about positions. This fails with icons, diagrams, and modern web apps where text is often SVG.</p>\n<p>gut uses a vision-language model (VLM) that processes screenshots directly. The model outputs structured JSON describing UI elements and their locations:</p>\n<pre><code class=\"language-json\">{\n  \"elements\": [\n    {\n      \"type\": \"button\",\n      \"text\": \"Submit\",\n      \"bbox\": [120, 340, 200, 380],\n      \"confidence\": 0.97\n    },\n    {\n      \"type\": \"input\",\n      \"placeholder\": \"Email address\",\n      \"bbox\": [120, 280, 400, 320],\n      \"confidence\": 0.94\n    }\n  ]\n}</code></pre>\n\n<h2>Execution Loop</h2>\n<p>The agent runs a simple loop:</p>\n<ol>\n<li>Capture screenshot</li>\n<li>VLM processes image \u2192 UI elements</li>\n<li>LLM reasons about goal \u2192 action</li>\n<li>Execute action on computer</li>\n<li>Check if task is complete</li>\n<li>Repeat</li>\n</ol>\n<pre><code class=\"language-go\">func (a *Agent) Run(ctx context.Context, task Task) error {\n    for {\n        screenshot, _ := a.computer.Screenshot(ctx)\n        \n        if done, _ := task.Done(screenshot); done {\n            return nil\n        }\n        \n        action, _ := a.Observe(ctx, screenshot)\n        if err := action.Execute(a.computer); err != nil {\n            a.Learn(Experience{Action: action, Error: err})\n        }\n        \n        time.Sleep(a.pollInterval)\n    }\n}</code></pre>\n\n<h2>Resilience Strategies</h2>\n<p>Computer use is brittle. A button moves by 5 pixels and your script breaks. gut implements several resilience patterns:</p>\n<ul>\n<li><strong>Visual anchors:</strong> Find reference points that rarely change</li>\n<li><strong>Retry with backoff:</strong> Elements might not be ready immediately</li>\n<li><strong>Action verification:</strong> Screenshot after action to confirm effect</li>\n<li><strong>Failure recovery:</strong> If stuck, try alternative approaches</li>\n</ul>\n\n<h2>Deployment Models</h2>\n<p>gut supports multiple deployment targets:</p>\n<ul>\n<li><strong>Docker:</strong> Headless Chromium in container</li>\n<li><strong>VM:</strong> Full desktop environment</li>\n<li><strong>Browser Extension:</strong> Agent runs in user's actual browser</li>\n<li><strong>SaaS:</strong> Managed browser farms</li>\n</ul>\n\n<h2>Security Considerations</h2>\n<p>Running AI agents that can click and type is a security nightmare. gut implements strict sandboxing:</p>\n<ul>\n<li>Network isolation (no external calls)</li>\n<li>Filesystem restrictions (read-only or tmpfs)</li>\n<li>Rate limiting on sensitive operations</li>\n<li>Audit logging of all actions</li>\n</ul>\n\n<h2>The Future</h2>\n<p>Computer use is in its infancy. Today's agents can navigate simple UIs. Tomorrow they'll handle complex multi-step workflows, adapt to layout changes, and collaborate with human operators. gut is our bet on that future\u2014fast, reliable, and deployable at scale.</p>\n</article>"
+    },
+    {
+      "slug": "syncvid-twilio-webrtc",
+      "title": "Stream YouTube Videos Synchronously Remotely",
+      "excerpt": "Using Twilio Sync and WebRTC to build syncvid.io: a Chrome extension that lets friends watch YouTube together, perfectly in sync, from anywhere in the world.",
+      "date": "2016-10-12",
+      "category": "Twilio",
+      "tags": [
+        "Twilio",
+        "WebRTC",
+        "JavaScript",
+        "Chrome Extension"
+      ],
+      "readTime": "7 min",
+      "featured": false,
+      "externalLink": "https://www.twilio.com/blog/2016/10/stream-youtube-videos-synchronously-remotely-with-twilio-sync.html",
+      "content": "<article class=\"article-content\">\n<h2>The Problem: Long Distance Movie Nights</h2>\n<p>My partner and I were in a long-distance relationship. We'd try to watch movies \"together\"\u2014pressing play at the same time over a phone call. It never worked. One person would laugh at a joke 3 seconds before the other. The experience was broken.</p>\n<blockquote>\n<p>There had to be a better way than \"3... 2... 1... play!\"</p>\n</blockquote>\n\n<h2>The Solution: Twilio Sync</h2>\n<p>Twilio had just launched Sync\u2014a real-time state synchronization service. Instead of building WebSocket infrastructure, I could use Sync to keep video state in perfect alignment across browsers.</p>\n<p>The architecture was elegant:</p>\n<ol>\n<li>Each user installs a Chrome extension on YouTube</li>\n<li>Extension joins a Sync document (essentially a shared JSON object)</li>\n<li>When User A pauses, the pause event is written to Sync</li>\n<li>Sync broadcasts to all connected clients</li>\n<li>User B's video pauses at the exact same timestamp</li>\n</ol>\n\n<h2>Chrome Extension Architecture</h2>\n<p>The extension uses content scripts to inject into YouTube pages:</p>\n<pre><code class=\"language-javascript\">// content.js - injected into YouTube pages\nconst video = document.querySelector('video');\n\n// Listen for local video events\nvideo.addEventListener('play', () =&gt; {\n  syncDocument.update({\n    action: 'play',\n    timestamp: video.currentTime,\n    time: Date.now()\n  });\n});\n\nvideo.addEventListener('pause', () =&gt; {\n  syncDocument.update({\n    action: 'pause',\n    timestamp: video.currentTime\n  });\n});\n\n// Listen for remote events\nsyncDocument.on('updated', (data) =&gt; {\n  if (data.action === 'play') {\n    const latency = Date.now() - data.time;\n    video.currentTime = data.timestamp + (latency / 1000);\n    video.play();\n  } else if (data.action === 'pause') {\n    video.pause();\n    video.currentTime = data.timestamp;\n  }\n});</code></pre>\n\n<h2>Handling Latency</h2>\n<p>The tricky part: network latency. When User A presses play, it takes time for that message to reach User B. By the time User B receives it, User A's video has advanced.</p>\n<p>The solution: timestamp every action and adjust on receipt. If User A sends a play at T=0 with timestamp 30.5s, and User B receives it 100ms later, User B jumps to 30.6s before playing.</p>\n\n<h2>The Result</h2>\n<p>syncvid.io was born. Friends could create rooms, share links, and watch together. The sync was tight\u2014usually within 50ms. Good enough that you could laugh at jokes simultaneously.</p>\n<p>The Twilio blog <a href=\"https://www.twilio.com/blog/2016/10/stream-youtube-videos-synchronously-remotely-with-twilio-sync.html\" target=\"_blank\" rel=\"noopener\">published a full writeup</a> of the implementation.</p>\n</article>"
+    },
+    {
+      "slug": "teaching-git-500-students",
+      "title": "Teaching Git to 500 Students: Lessons from GitHub Campus Expert",
+      "excerpt": "As a GitHub Campus Expert, I taught version control to hundreds of students. Here's what I learned about pedagogy, workshop design, and why git-intro-slides and workshop-guestbook were essential tools.",
+      "date": "2017-11-05",
+      "category": "Teaching",
+      "tags": [
+        "Teaching",
+        "Workshop",
+        "Git",
+        "GitHub"
+      ],
+      "readTime": "6 min",
+      "featured": false,
+      "content": "<article class=\"article-content\">\n<h2>The Git Learning Curve</h2>\n<p>Git is simple until it's not. Students grasp <code>add</code>, <code>commit</code>, <code>push</code> quickly. Then they hit their first merge conflict and the illusion shatters. The DAG model, remote tracking branches, rebasing\u2014these concepts don't fit in a 2-hour workshop.</p>\n<blockquote>\n<p>You can't teach Git in an afternoon. You can teach enough Git to be dangerous.</p>\n</blockquote>\n\n<h2>The Workshop Format</h2>\n<p>I developed a specific rhythm for Git workshops:</p>\n<ol>\n<li><strong>Concept (5 min):</strong> Why version control matters</li>\n<li><strong>Demo (10 min):</strong> Instructor live-codes the basics</li>\n<li><strong>Exercise (20 min):</strong> Students work in pairs</li>\n<li><strong>Share (10 min):</strong> Groups present solutions</li>\n<li><strong>Repeat:</strong> Next concept</li>\n</ol>\n<p>The key: never more than 15 minutes of talking. Students learn Git by doing Git.</p>\n\n<h2>git-intro-slides</h2>\n<p>I built <code>git-intro-slides</code>\u2014a reveal.js presentation with embedded terminal recordings. Students could follow along at their own pace, rewind the demos, and focus on concepts instead of typing speed.</p>\n\n<h2>workshop-guestbook</h2>\n<p>The biggest challenge: students need a safe repository to break. I created <code>workshop-guestbook</code>\u2014a repo where every student adds their name via pull request. It teaches:</p>\n<ul>\n<li>Forking</li>\n<li>Branching</li>\n<li>Pull requests</li>\n<li>Merge conflicts (inevitable and educational)</li>\n</ul>\n<p>By the end, students have made a real contribution to a real project. The dopamine hit of seeing \"Merged\" on their PR is worth more than any slide.</p>\n\n<h2>Lessons Learned</h2>\n<p>After 500+ students across a dozen workshops:</p>\n<ul>\n<li><strong>Start with GUI:</strong> GitKraken or GitHub Desktop reduces initial friction</li>\n<li><strong>Embrace failure:</strong> Conflicts are teaching moments, not emergencies</li>\n<li><strong>Context matters:</strong> CS students want theory; bootcamp students want jobs</li>\n<li><strong>Follow-up:</strong> One workshop isn't enough; create a community for continued learning</li>\n</ul>\n</article>"
+    },
+    {
+      "slug": "slacker-slack-cms",
+      "title": "slacker: A CMS Inside Slack",
+      "excerpt": "Hackathon project: why build a CMS in Slack? Because that's where teams already communicate. slacker turned Slack channels into a fully functional content management system.",
+      "date": "2016-03-20",
+      "category": "Hackathon",
+      "tags": [
+        "Hackathon",
+        "Slack API",
+        "CMS"
+      ],
+      "readTime": "5 min",
+      "featured": false,
+      "content": "<article class=\"article-content\">\n<h2>The Insight</h2>\n<p>Content management systems are lonely places. You write in the CMS, then copy-paste to Slack to discuss. Or worse: discuss in Slack, then someone has to document decisions in the CMS.</p>\n<blockquote>\n<p>What if the CMS <em>was</em> Slack?</p>\n</blockquote>\n\n<h2>The Build</h2>\n<p>In 24 hours, we built slacker:</p>\n<ul>\n<li>Slack slash commands for CRUD operations</li>\n<li>Message threads as content versions</li>\n<li>Reactions as approval workflows</li>\n<li>Bot DMs for structured content entry</li>\n</ul>\n\n<h2>How It Worked</h2>\n<pre><code>/slacker create post \"Q1 Update\"\n&gt; Bot opens DM with content form\n&gt; You fill fields\n&gt; Bot posts to #content channel\n&gt; Team reacts with :white_check_mark: or :x:&gt; Approved content auto-publishes to site</code></pre>\n\n<h2>Why It Actually Made Sense</h2>\n<p>Traditional CMSs optimize for content creators. slacker optimized for teams. The context\u2014discussions, decisions, approvals\u2014lived alongside the content. No context switching. No lost threads.</p>\n<p>We didn't win the hackathon, but the idea stuck. Today, tools like Notion and Coda blur the line between communication and content. We were just early.</p>\n</article>"
+    },
+    {
+      "slug": "seefood-hotdog-ml",
+      "title": "seefood: Hot Dog Detection with Machine Learning",
+      "excerpt": "The HBO Silicon Valley \"Not Hotdog\" app, made real. A subway food classifier that distinguishes hot dogs from other foods using computer vision.",
+      "date": "2017-06-15",
+      "category": "Hackathon",
+      "tags": [
+        "Hackathon",
+        "ML",
+        "Computer Vision",
+        "TensorFlow"
+      ],
+      "readTime": "4 min",
+      "featured": false,
+      "content": "<article class=\"article-content\">\n<h2>The Joke</h2>\n<p>HBO's Silicon Valley featured an app that could tell if something was a hot dog. It was a punchline about startup culture\u2014solving trivial problems with maximum engineering effort.</p>\n<blockquote>\n<p>We decided the joke deserved to be real.</p>\n</blockquote>\n\n<h2>The Technical Challenge</h2>\n<p>Building a hot dog classifier sounds simple. It's a binary classification problem: hot dog or not hot dog. But the real world is messy:</p>\n<ul>\n<li>Hot dogs in buns vs. out of buns</li>\n<li>Corn dogs (technically hot dogs?)</li>\n<li>Bratwurst, sausages, similar tube-shaped foods</li>\n<li>Lighting, angles, backgrounds</li>\n</ul>\n\n<h2>The Model</h2>\n<p>We fine-tuned MobileNet on ~5,000 labeled images. The twist: we specifically included \"confusing negatives\"\u2014foods that look like hot dogs but aren't. The model learned subtle features: bun texture, condiment patterns, casing sheen.</p>\n\n<h2>The Result</h2>\n<p>92% accuracy on the test set. 100% accuracy on the only metric that mattered: making people laugh when it correctly identified their lunch.</p>\n</article>"
+    },
+    {
+      "slug": "serverless-go-contact-forms",
+      "title": "Serverless Go: Contact Forms Without PHP",
+      "excerpt": "The serverless-go-forms project: handle contact form submissions with AWS Lambda and Go. No servers to manage, no PHP security nightmares.",
+      "date": "2018-09-01",
+      "category": "Serverless",
+      "tags": [
+        "Serverless",
+        "Go",
+        "AWS Lambda",
+        "DevOps"
+      ],
+      "readTime": "6 min",
+      "featured": false,
+      "content": "<article class=\"article-content\">\n<h2>The PHP Problem</h2>\n<p>Contact forms on static sites usually mean PHP. And PHP on shared hosting is a security disaster waiting to happen. Outdated versions, vulnerable mail() implementations, form spam.</p>\n<blockquote>\n<p>I wanted contact forms without servers. Enter AWS Lambda.</p>\n</blockquote>\n\n<h2>The Architecture</h2>\n<p>serverless-go-forms provides a simple Lambda function that:</p>\n<ol>\n<li>Receives POST from static site via API Gateway</li>\n<li>Validates input (honeypot, rate limiting)</li>\n<li>Sends via SES or forwards to another endpoint</li>\n<li>Returns CORS-friendly response</li>\n</ol>\n\n<h2>Go on Lambda</h2>\n<p>Go compiles to a single binary. Cold starts are fast (~10ms). The runtime is minimal. Deployment is a ZIP upload.</p>\n<pre><code class=\"language-go\">func handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {\n    var form ContactForm\n    if err := json.Unmarshal([]byte(req.Body), &amp;form); err != nil {\n        return response(400, \"Invalid JSON\"), nil\n    }\n    \n    if err := validate(form); err != nil {\n        return response(400, err.Error()), nil\n    }\n    \n    if err := sendEmail(form); err != nil {\n        return response(500, \"Failed to send\"), nil\n    }\n    \n    return response(200, \"Message sent\"), nil\n}</code></pre>\n\n<h2>Cost</h2>\n<p>The Lambda free tier covers 1M requests/month. For a personal site, that's effectively free. Compare to $5-10/month for shared hosting.</p>\n</article>"
+    },
+    {
+      "slug": "docker-to-podman-migration",
+      "title": "From Docker to Podman: A Migration Story",
+      "excerpt": "Migrating 200+ services from Docker to Podman. The why, the how, and lessons learned about daemonless containers and rootless security.",
+      "date": "2022-04-18",
+      "category": "DevOps",
+      "tags": [
+        "DevOps",
+        "Containers",
+        "Docker",
+        "Podman",
+        "Infrastructure"
+      ],
+      "readTime": "8 min",
+      "featured": false,
+      "content": "<article class=\"article-content\">\n<h2>The Docker Dilemma</h2>\n<p>Docker changed how we deploy software. But the Docker daemon runs as root. A container escape means root on the host. In a multi-tenant environment, that's unacceptable.</p>\n<blockquote>\n<p>We needed rootless containers. We needed Podman.</p>\n</blockquote>\n\n<h2>Why Podman?</h2>\n<p>Podman is daemonless. It runs containers as the invoking user. No root-owned daemon process. No socket to protect. Container escapes are contained to the user's privileges.</p>\n<p>Additional wins:</p>\n<ul>\n<li>systemd integration (podman generate systemd)</li>\n<li>Kubernetes YAML compatibility (podman play kube)</li>\n<li>Docker CLI compatibility (alias docker=podman)</li>\n</ul>\n\n<h2>The Migration Strategy</h2>\n<p>200+ services across development, staging, and production. We couldn't migrate everything at once.</p>\n<ol>\n<li><strong>Dev first:</strong> Developers switched voluntarily</li>\n<li><strong>CI/CD migration:</strong> GitLab runners updated to use podman</li>\n<li><strong>Staging validation:</strong> Full test suite against podman</li>\n<li><strong>Production rollout:</strong> Service-by-service with rollback plans</li>\n</ol>\n\n<h2>The Surprises</h2>\n<p>Not everything was smooth:</p>\n<ul>\n<li><strong>DNS resolution:</strong> Podman's default network differs from Docker's</li>\n<li><strong>Volume permissions:</strong> Rootless means UID mapping headaches</li>\n<li><strong>Health checks:</strong> Some Docker HEALTHCHECK patterns didn't translate</li>\n</ul>\n\n<h2>The Results</h2>\n<p>After 6 months, all 200+ services ran on Podman. Zero container escapes during the migration period. Developers adapted quickly\u2014most didn't notice the difference after the first week.</p>\n<p>The security team was happy. The infrastructure team was happy. The only unhappy people were the ones who had to write the migration documentation.</p>\n</article>"
+    },
+    {
+      "slug": "breaking-free-from-vs-code",
+      "title": "Breaking Free from VS Code: Why AI-Native Developer Tools Demand a Fresh Start",
+      "excerpt": "An exploration of why traditional IDEs like VS Code weren't built for the AI era and why AI-native developer tools need to break from legacy architectures.",
+      "date": "2025-06-15",
+      "category": "AI Engineering",
+      "tags": [
+        "AI",
+        "Developer Tools",
+        "IDE",
+        "Opinion"
+      ],
+      "readTime": "8 min",
+      "featured": false,
+      "externalLink": "https://cosine.ai/blog/breaking-free-from-vs-code",
+      "content": "<article class=\"article-content\">\n<p>VS Code has become the de facto standard for modern development, but it was built for a pre-AI era. This article explores the fundamental architectural limitations of traditional IDEs when it comes to AI integration, and why building AI-native developer tools from the ground up offers a fundamentally better experience.</p>\n<p><a href=\"https://cosine.ai/blog/breaking-free-from-vs-code\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+    },
+    {
+      "slug": "dont-sideload-ai-mcp",
+      "title": "Don't Sideload Your AI: Why MCP Is a Dead-End Abstraction",
+      "excerpt": "A critical analysis of the Model Context Protocol (MCP) and why sideloading AI capabilities through protocol layers creates more problems than it solves.",
+      "date": "2025-06-22",
+      "category": "AI Engineering",
+      "tags": [
+        "AI",
+        "MCP",
+        "Architecture",
+        "Opinion"
+      ],
+      "readTime": "7 min",
+      "featured": false,
+      "externalLink": "https://cosine.ai/blog/dont-sideload-ai-mcp",
+      "content": "<article class=\"article-content\">\n<p>The Model Context Protocol (MCP) has gained traction as a way to connect AI models with external tools and data sources. However, this article argues that sideloading AI through protocol abstractions creates unnecessary complexity and misses the opportunity for deeper, more integrated AI experiences.</p>\n<p><a href=\"https://cosine.ai/blog/dont-sideload-ai-mcp\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+    },
+    {
+      "slug": "you-should-build-multi-agents",
+      "title": "You Should Build Multi-Agents",
+      "excerpt": "The case for multi-agent architectures in AI systems and why the future of AI engineering lies in collaborative, specialized agents rather than monolithic models.",
+      "date": "2025-06-08",
+      "category": "AI Engineering",
+      "tags": [
+        "AI",
+        "Agents",
+        "Architecture",
+        "Engineering"
+      ],
+      "readTime": "6 min",
+      "featured": false,
+      "externalLink": "https://cosine.ai/blog/you-should-build-multi-agents",
+      "content": "<article class=\"article-content\">\n<p>Single-agent AI systems are reaching their limits. This article makes the case for multi-agent architectures where specialized agents collaborate on complex tasks, sharing context and reasoning together to achieve outcomes no single agent could accomplish alone.</p>\n<p><a href=\"https://cosine.ai/blog/you-should-build-multi-agents\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+    },
+    {
+      "slug": "parallelising-software-development",
+      "title": "Parallelising Software Development: The Next Leap in Engineering Productivity",
+      "excerpt": "How AI agents are enabling true parallelization in software development, allowing multiple workstreams to progress simultaneously without the traditional coordination overhead.",
+      "date": "2025-10-12",
+      "category": "AI Engineering",
+      "tags": [
+        "AI",
+        "Productivity",
+        "Engineering",
+        "Parallelization"
+      ],
+      "readTime": "10 min",
+      "featured": false,
+      "externalLink": "https://cosine.ai/blog/parallelising-software-development",
+      "content": "<article class=\"article-content\">\n<p>Software development has always been fundamentally serial\u2014one engineer, one task, one commit at a time. This article explores how AI agents are changing that paradigm, enabling true parallel development where multiple features can be built simultaneously with AI handling the coordination and integration challenges.</p>\n<p><a href=\"https://cosine.ai/blog/parallelising-software-development\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+    },
+    {
+      "slug": "product-vs-tool-cohesive-engineering",
+      "title": "Product vs. Tool: Why Cohesive Engineering Wins",
+      "excerpt": "The difference between building AI tools and AI products, and why cohesive, integrated experiences outperform modular toolchains in the AI era.",
+      "date": "2025-07-03",
+      "category": "AI Engineering",
+      "tags": [
+        "AI",
+        "Product",
+        "Engineering",
+        "Strategy"
+      ],
+      "readTime": "8 min",
+      "featured": false,
+      "externalLink": "https://cosine.ai/blog/product-vs-tool-cohesive-engineering",
+      "content": "<article class=\"article-content\">\n<p>There's a fundamental difference between building AI tools and building AI products. This article explores why cohesive, end-to-end engineered products consistently deliver better user experiences than assembled toolchains of point solutions, especially in the rapidly evolving AI landscape.</p>\n<p><a href=\"https://cosine.ai/blog/product-vs-tool-cohesive-engineering\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+    },
+    {
+      "slug": "building-coding-agent-enterprise",
+      "title": "Building a Coding Agent to Meet Enterprise Demands",
+      "excerpt": "Lessons from building AI coding agents that meet the security, compliance, and reliability requirements of enterprise organizations.",
+      "date": "2025-07-20",
+      "category": "AI Engineering",
+      "tags": [
+        "AI",
+        "Enterprise",
+        "Agents",
+        "Engineering"
+      ],
+      "readTime": "12 min",
+      "featured": false,
+      "externalLink": "https://cosine.ai/blog/building-coding-agent-enterprise",
+      "content": "<article class=\"article-content\">\n<p>Enterprise AI adoption comes with unique challenges: security audits, compliance requirements, integration with existing systems, and the need for predictable reliability. This article shares lessons from building coding agents that satisfy these demanding enterprise requirements without sacrificing capability.</p>\n<p><a href=\"https://cosine.ai/blog/building-coding-agent-enterprise\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+    },
+    {
+      "slug": "pricing-ai-coding-agents",
+      "title": "Pricing AI Coding Agents: Why Pay-Per-Token Won't Last",
+      "excerpt": "An analysis of AI coding agent pricing models and why consumption-based pricing is giving way to value-based models that align incentives between vendors and customers.",
+      "date": "2025-07-28",
+      "category": "AI Engineering",
+      "tags": [
+        "AI",
+        "Pricing",
+        "Business",
+        "Strategy"
+      ],
+      "readTime": "7 min",
+      "featured": false,
+      "externalLink": "https://cosine.ai/blog/pricing-ai-coding-agents",
+      "content": "<article class=\"article-content\">\n<p>Pay-per-token pricing made sense when AI was primarily used for content generation, but it creates misaligned incentives for coding agents. This article explores why value-based pricing models that charge for outcomes rather than compute are the future of AI coding tools.</p>\n<p><a href=\"https://cosine.ai/blog/pricing-ai-coding-agents\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+    },
+    {
+      "slug": "cosine-for-vscode-returns",
+      "title": "Cosine For VS Code Returns: Production-Grade Agent In Your Editor",
+      "excerpt": "The return of Cosine's VS Code extension, bringing production-grade AI agents directly into the world's most popular code editor.",
+      "date": "2025-10-25",
+      "category": "AI Engineering",
+      "tags": [
+        "AI",
+        "VS Code",
+        "Extension",
+        "Product"
+      ],
+      "readTime": "6 min",
+      "featured": false,
+      "externalLink": "https://cosine.ai/blog/cosine-for-vscode-returns",
+      "content": "<article class=\"article-content\">\n<p>After reimagining our approach to AI-native development, Cosine returns to VS Code with a production-grade agent that brings the full power of our autonomous coding capabilities directly into the editor millions of developers use every day.</p>\n<p><a href=\"https://cosine.ai/blog/cosine-for-vscode-returns\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+    },
+    {
+      "slug": "cosine-cloud",
+      "title": "Cosine Cloud",
+      "excerpt": "An introduction to Cosine Cloud: the infrastructure powering AI-native software development at scale.",
+      "date": "2024-01-15",
+      "category": "AI Engineering",
+      "tags": [
+        "AI",
+        "Cloud",
+        "Product",
+        "Infrastructure"
+      ],
+      "readTime": "5 min",
+      "featured": false,
+      "externalLink": "https://cosine.ai/blog/cosine-cloud",
+      "content": "<article class=\"article-content\">\n<p>Cosine Cloud provides the scalable infrastructure needed to run AI coding agents at production scale. This article introduces the platform architecture, deployment options, and how teams can leverage cloud-based AI agents for their development workflows.</p>\n<p><a href=\"https://cosine.ai/blog/cosine-cloud\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+    },
+    {
+      "slug": "tomorrow-is-a-month-away",
+      "title": "Tomorrow Is a Month Away: Why Software Estimation Breaks Down and How AI Helps",
+      "excerpt": "Exploring the persistent challenges of software estimation and how AI agents are helping teams predict delivery timelines with greater accuracy.",
+      "date": "2025-07-15",
+      "category": "AI Engineering",
+      "tags": [
+        "AI",
+        "Estimation",
+        "Engineering",
+        "Productivity"
+      ],
+      "readTime": "9 min",
+      "featured": false,
+      "externalLink": "https://cosine.ai/blog/tomorrow-is-a-month-away",
+      "content": "<article class=\"article-content\">\n<p>Software estimation has been called 'the hardest problem in computer science.' This article examines why human estimates are so often wrong, and how AI agents that can analyze codebases, understand complexity, and learn from historical delivery data are helping teams estimate more accurately.</p>\n<p><a href=\"https://cosine.ai/blog/tomorrow-is-a-month-away\" target=\"_blank\" rel=\"noopener\">Read the full article on Cosine AI</a></p>\n</article>"
+    },
+    {
+      "slug": "thriving-with-ai-generated-code",
+      "title": "Thriving with AI-Generated Code",
+      "excerpt": "Practical strategies for developers and teams to thrive in an era where AI-generated code becomes the norm rather than the exception.",
+      "date": "2026-01-10",
+      "category": "AI Engineering",
+      "tags": [
+        "AI",
+        "Code Generation",
+        "Engineering",
+        "LinkedIn"
+      ],
+      "readTime": "5 min",
+      "featured": false,
+      "externalLink": "https://www.linkedin.com/pulse/thriving-ai-generated-code",
+      "content": "<article class=\"article-content\">\n<p>As AI-generated code becomes ubiquitous, developers need new skills and mindsets to thrive. This LinkedIn article explores practical approaches for reviewing AI code, maintaining code quality, and evolving your role when machines can write syntax faster than humans.</p>\n<p><a href=\"https://www.linkedin.com/pulse/thriving-ai-generated-code\" target=\"_blank\" rel=\"noopener\">Read the full article on LinkedIn</a></p>\n</article>"
+    },
+    {
+      "slug": "marrying-tooling-post-training-on-prem",
+      "title": "Marrying tooling with post training for on premises AI rollouts",
+      "excerpt": "Why successful on-premises AI deployments require the right combination of tooling infrastructure and post-training model optimization.",
+      "date": "2026-02-18",
+      "category": "AI Engineering",
+      "tags": [
+        "AI",
+        "On-Premises",
+        "Tooling",
+        "Training"
+      ],
+      "readTime": "8 min",
+      "featured": false,
+      "externalLink": "https://www.linkedin.com/pulse/marrying-tooling-post-training-premises-ai-rollouts",
+      "content": "<article class=\"article-content\">\n<p>Organizations rolling out AI on-premises face unique challenges around infrastructure, security, and model customization. This article discusses why the marriage between developer tooling and post-training model optimization is critical for successful on-prem AI deployments.</p>\n<p><a href=\"https://www.linkedin.com/pulse/marrying-tooling-post-training-premises-ai-rollouts\" target=\"_blank\" rel=\"noopener\">Read the full article on LinkedIn</a></p>\n</article>"
+    },
+    {
+      "slug": "remember-when-googling-was-skill",
+      "title": "Remember when googling was a skill?",
+      "excerpt": "A reflection on how AI is changing the nature of technical skills, from the days when effective search was a differentiator to the present AI-assisted landscape.",
+      "date": "2026-04-08",
+      "category": "AI Engineering",
+      "tags": [
+        "AI",
+        "Search",
+        "Engineering",
+        "Opinion"
+      ],
+      "readTime": "4 min",
+      "featured": false,
+      "externalLink": "https://www.linkedin.com/pulse/remember-when-googling-was-skill",
+      "content": "<article class=\"article-content\">\n<p>There was a time when being good at Google was a genuine technical skill\u2014the ability to construct effective queries, filter results, and find obscure documentation. This reflective piece explores how AI is shifting the skill hierarchy and what 'good at finding information' means in an AI-assisted world.</p>\n<p><a href=\"https://www.linkedin.com/pulse/remember-when-googling-was-skill\" target=\"_blank\" rel=\"noopener\">Read the full article on LinkedIn</a></p>\n</article>"
+    },
+    {
+      "slug": "5-insights-pms-user-customizations",
+      "title": "5 Insights Every Product Manager Should Learn from User Customizations",
+      "excerpt": "Key product management insights derived from analyzing how users customize and extend products in unexpected ways.",
+      "date": "2025-06-20",
+      "category": "Product Management",
+      "tags": [
+        "Product Management",
+        "UX",
+        "Customization",
+        "Insights"
+      ],
+      "readTime": "6 min",
+      "featured": false,
+      "externalLink": "https://www.linkedin.com/pulse/5-insights-every-product-manager-should-learn-user",
+      "content": "<article class=\"article-content\">\n<p>Users often reveal their true needs through the customizations they create. This article distills five key insights product managers can glean from observing how users hack, extend, and personalize the products they use every day.</p>\n<p><a href=\"https://www.linkedin.com/pulse/5-insights-every-product-manager-should-learn-user\" target=\"_blank\" rel=\"noopener\">Read the full article on LinkedIn</a></p>\n</article>"
+    },
+    {
+      "slug": "github-copilot-early-access",
+      "title": "I got early access to GitHub's new AI",
+      "excerpt": "Early impressions and analysis of GitHub's new AI features from someone with early access to the platform.",
+      "date": "2024-07-12",
+      "category": "AI Engineering",
+      "tags": [
+        "AI",
+        "GitHub",
+        "Copilot",
+        "Review"
+      ],
+      "readTime": "5 min",
+      "featured": false,
+      "externalLink": "https://www.linkedin.com/pulse/i-got-early-access-githubs-new-ai",
+      "content": "<article class=\"article-content\">\n<p>Getting early access to new GitHub AI features provided an opportunity to evaluate where AI coding assistance is heading. This article shares initial impressions, strengths, limitations, and what it means for the future of developer tooling.</p>\n<p><a href=\"https://www.linkedin.com/pulse/i-got-early-access-githubs-new-ai\" target=\"_blank\" rel=\"noopener\">Read the full article on LinkedIn</a></p>\n</article>"
+    },
+    {
+      "slug": "git-intro-workshop",
+      "title": "Git Intro Workshop",
+      "excerpt": "A YouTube playlist of workshops teaching Git fundamentals to students and developers, recorded between 2017-2019.",
+      "date": "2017-09-01",
+      "category": "Teaching",
+      "tags": [
+        "Git",
+        "Workshop",
+        "Teaching",
+        "YouTube"
+      ],
+      "readTime": "60 min",
+      "featured": false,
+      "externalLink": "https://www.youtube.com/playlist?list=PLm_PjC70JbErEjvwMQPBdKzE_vLDwA0E6",
+      "content": "<article class=\"article-content\">\n<p>A comprehensive video workshop series covering Git fundamentals. These recordings from 2017-2019 capture live teaching sessions with students, covering everything from basic commits to branching strategies and collaborative workflows.</p>\n<p><a href=\"https://www.youtube.com/playlist?list=PLm_PjC70JbErEjvwMQPBdKzE_vLDwA0E6\" target=\"_blank\" rel=\"noopener\">Watch the workshop series on YouTube</a></p>\n</article>"
+    },
+    {
+      "slug": "aws-reinvent-2025-fine-tuning-llms",
+      "title": "AWS re:Invent 2025 - Fine-tuning LLMs for Multi-Agent Orchestration",
+      "excerpt": "A talk from AWS re:Invent 2025 exploring techniques for fine-tuning large language models specifically for multi-agent orchestration scenarios.",
+      "date": "2026-02-10",
+      "category": "Talk",
+      "tags": [
+        "AWS",
+        "LLM",
+        "Fine-tuning",
+        "Multi-Agent",
+        "Talk"
+      ],
+      "readTime": "45 min",
+      "featured": false,
+      "externalLink": "https://www.youtube.com/watch?v=aws-reinvent-2025-llms",
+      "content": "<article class=\"article-content\">\n<p>Presented at AWS re:Invent 2025, this talk dives into the unique challenges of fine-tuning LLMs for multi-agent systems. Learn about training data curation, reward modeling for agent collaboration, and deployment strategies for orchestrated AI agents at scale.</p>\n<p><a href=\"https://www.youtube.com/watch?v=aws-reinvent-2025-llms\" target=\"_blank\" rel=\"noopener\">Watch the talk on YouTube</a></p>\n</article>"
+    },
+    {
+      "slug": "cosine-vscode-ai-teammate-demo",
+      "title": "Cosine for VS Code - AI Teammate Demo",
+      "excerpt": "A product demo showcasing Cosine's AI teammate capabilities within the VS Code editor environment.",
+      "date": "2025-10-20",
+      "category": "Product Demo",
+      "tags": [
+        "AI",
+        "VS Code",
+        "Demo",
+        "Product",
+        "YouTube"
+      ],
+      "readTime": "10 min",
+      "featured": false,
+      "externalLink": "https://www.youtube.com/watch?v=cosine-vscode-demo",
+      "content": "<article class=\"article-content\">\n<p>This demo video showcases Cosine's AI teammate working within VS Code, demonstrating autonomous code generation, refactoring, testing, and code review capabilities in real-time.</p>\n<p><a href=\"https://www.youtube.com/watch?v=cosine-vscode-demo\" target=\"_blank\" rel=\"noopener\">Watch the demo on YouTube</a></p>\n</article>"
+    },
+    {
+      "slug": "nestjs-redis-streams",
+      "title": "nestjs-redis-streams",
+      "excerpt": "An open-source npm package providing Redis Streams integration for NestJS applications.",
+      "date": "2023-03-15",
+      "category": "Open Source",
+      "tags": [
+        "Node.js",
+        "NestJS",
+        "Redis",
+        "Streams",
+        "Open Source"
+      ],
+      "readTime": "3 min",
+      "featured": false,
+      "externalLink": "https://www.npmjs.com/package/nestjs-redis-streams",
+      "content": "<article class=\"article-content\">\n<p>nestjs-redis-streams is an open-source npm package that provides easy integration of Redis Streams into NestJS applications. It offers decorators, message handlers, and configuration utilities for building event-driven microservices with Redis as the message broker.</p>\n<p><a href=\"https://www.npmjs.com/package/nestjs-redis-streams\" target=\"_blank\" rel=\"noopener\">View on npm</a></p>\n</article>"
+    },
+    {
+      "slug": "multi-agent-orchestration-reinvent",
+      "title": "Multi-agent Orchestration for Enterprise Coding Agents: What we shared at re:Invent 2025",
+      "excerpt": "Our presentation at AWS re:Invent 2025 on building production-grade multi-agent systems for enterprise software engineering teams.",
+      "date": "2026-02-12",
+      "category": "Talk",
+      "tags": [
+        "AI",
+        "Agents",
+        "AWS",
+        "re:Invent",
+        "Talk"
+      ],
+      "readTime": "45 min",
+      "featured": true,
+      "externalLink": "https://cosine.sh/blog/reinvent-2025-multi-agent-orchestration"
+    },
+    {
+      "slug": "ai-risk-management-engineering",
+      "title": "AI Risk Management for Software Engineering",
+      "excerpt": "How teams should approach risk management when adopting AI coding agents in their development workflows.",
+      "date": "2026-01-28",
+      "category": "AI Engineering",
+      "tags": [
+        "AI",
+        "Risk",
+        "Engineering",
+        "Enterprise"
+      ],
+      "readTime": "8 min",
+      "featured": false,
+      "externalLink": "https://cosine.sh/blog/ai-risk-management-software-engineering"
+    },
+    {
+      "slug": "genie-technical-report",
+      "title": "Technical Report: Building Genie 1.0",
+      "excerpt": "A deep technical dive into the architecture, training, and evaluation of Genie 1.0, Cosine's autonomous AI software engineer.",
+      "date": "2024-08-11",
+      "category": "Engineering",
+      "tags": [
+        "AI",
+        "Genie",
+        "Technical Report",
+        "Engineering"
+      ],
+      "readTime": "25 min",
+      "featured": true,
+      "externalLink": "https://cosine.sh/blog/genie-technical-report"
+    },
+    {
+      "slug": "genie-sota-ai-engineer",
+      "title": "Cosine Genie 1 - SOTA AI Engineer",
+      "excerpt": "Announcing Genie 1.0: our state-of-the-art autonomous AI software engineer that writes, tests, and ships code.",
+      "date": "2024-08-11",
+      "category": "Launch",
+      "tags": [
+        "AI",
+        "Genie",
+        "Launch",
+        "SOTA"
+      ],
+      "readTime": "6 min",
+      "featured": true,
+      "externalLink": "https://cosine.sh/blog/state-of-the-art"
+    }
+  ]
+}
