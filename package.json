@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "babel-polyfill": "^6.26.0",
-    "parcel": "^1.12.4",
+    "parcel": "^2.16.4",
     "parcel-plugin-static-files-copy": "^2.0.0",
     "playwright": "^1.59.1"
   },
