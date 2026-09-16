@@ -6,4 +6,3 @@
 
 [brutalistwebsites.com](https://www.brutalistwebsites.com/)
 
-Bruh
