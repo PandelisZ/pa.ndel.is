@@ -3,3 +3,7 @@ node_modules
 dist
 .yarn
 .pnp.js
+
+# Local browser verification artifacts
+output/
+.playwright-cli/
