@@ -1,605 +1,428 @@
 /**
- * PageTransition - WebGL Page Transition System
- * Uses Three.js r128 for brutalist glitch/distortion effects
- * 
- * Transitions:
- * - 'glitch-wipe': Horizontal glitch blocks that wipe across screen
- * - 'chromatic-split': RGB channel separation with noise
- * - 'pixel-sort': Pixel sorting distortion effect
- * - 'noise-reveal': Noise-based dissolve transition
+ * PageTransition - full-screen 3D page transition system.
+ *
+ * The transition is intentionally self-contained: PageManager asks it to play
+ * the exit phase, then the next document plays the entry phase from
+ * sessionStorage. That keeps the writing and article pages as normal static
+ * pages, so their page-specific scripts run reliably after navigation.
  */
 
 class PageTransition {
-  constructor() {
-    this.isActive = false;
-    this.currentType = 'glitch-wipe';
+  constructor(options = {}) {
+    this.options = {
+      outDuration: 980,
+      inDuration: 780,
+      pixelRatio: 1.5,
+      incomingKey: 'pandelis:incoming-transition',
+      ...options
+    };
+
     this.canvas = null;
+    this.shell = null;
+    this.hud = null;
     this.renderer = null;
     this.scene = null;
     this.camera = null;
-    this.composer = null;
-    this.currentTexture = null;
-    this.planeMesh = null;
+    this.world = null;
+    this.gate = [];
+    this.frames = [];
+    this.shards = [];
+    this.cards = [];
+    this.clock = new THREE.Clock();
     this.animationId = null;
-    this.startTime = 0;
-    this.duration = 1200; // ms
-    this.destination = null;
-    
-    // Check for reduced motion preference
+    this.phase = 'idle';
+    this.ready = false;
+    this.isActive = false;
     this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    
-    // Shader uniforms
-    this.uniforms = {
-      uTime: { value: 0 },
-      uProgress: { value: 0 },
-      uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
-      uTexture: { value: null },
-      uGlitchIntensity: { value: 0 },
-      uDirection: { value: 1 }, // 1 = out, -1 = in
-      uType: { value: 0 } // 0=glitch-wipe, 1=chromatic-split, 2=pixel-sort, 3=noise-reveal
-    };
-    
-    // Bind methods
-    this.animate = this.animate.bind(this);
+
+    this.animatePhase = this.animatePhase.bind(this);
     this.handleResize = this.handleResize.bind(this);
-    this.handleClick = this.handleClick.bind(this);
-    
-    // Initialize if not reduced motion
-    if (!this.prefersReducedMotion) {
-      this.init();
-    }
   }
-  
+
   init() {
-    this.createCanvas();
+    if (this.ready || this.prefersReducedMotion || typeof THREE === 'undefined') {
+      return this;
+    }
+
+    this.createShell();
     this.setupScene();
-    this.setupPostProcessing();
-    this.addEventListeners();
+    this.addLights();
+    this.buildGeometry();
+    this.handleResize();
+    window.addEventListener('resize', this.handleResize);
+
+    this.ready = true;
+    this.playIncomingTransition();
+    return this;
   }
-  
-  createCanvas() {
+
+  createShell() {
+    this.shell = document.createElement('div');
+    this.shell.className = 'transition-shell';
+    this.shell.setAttribute('aria-hidden', 'true');
+
     this.canvas = document.createElement('canvas');
     this.canvas.id = 'transition-canvas';
-    this.canvas.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 999999;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.1s;
-    `;
-    document.body.appendChild(this.canvas);
+
+    this.hud = document.createElement('div');
+    this.hud.className = 'transition-hud';
+    this.hud.innerHTML = [
+      '<span class="transition-hud__label">PAGE TRANSFER</span>',
+      '<span class="transition-hud__target"></span>',
+      '<span class="transition-hud__counter">00</span>'
+    ].join('');
+
+    this.shell.appendChild(this.canvas);
+    this.shell.appendChild(this.hud);
+    document.body.appendChild(this.shell);
   }
-  
+
   setupScene() {
-    // Scene
     this.scene = new THREE.Scene();
-    
-    // Camera (orthographic for full-screen quad)
-    this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
-    this.camera.position.z = 1;
-    
-    // Renderer
+    this.camera = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 90);
+    this.camera.position.set(0, 0, 8.5);
+
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
-      antialias: false,
-      alpha: true
+      alpha: true,
+      antialias: true,
+      preserveDrawingBuffer: true
     });
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setClearColor(0x000000, 0);
+    this.renderer.outputEncoding = THREE.sRGBEncoding;
+
+    this.world = new THREE.Group();
+    this.scene.add(this.world);
   }
-  
-  setupPostProcessing() {
-    this.composer = new THREE.EffectComposer(this.renderer);
-    
-    // Render pass
-    const renderPass = new THREE.RenderPass(this.scene, this.camera);
-    this.composer.addPass(renderPass);
-    
-    // Brutalist transition shader pass
-    const transitionPass = new THREE.ShaderPass(this.getTransitionShader());
-    transitionPass.uniforms = this.uniforms;
-    transitionPass.renderToScreen = true;
-    this.composer.addPass(transitionPass);
+
+  addLights() {
+    const ambient = new THREE.AmbientLight(0xffffff, 0.58);
+    const key = new THREE.DirectionalLight(0xf3cd05, 1.45);
+    const rim = new THREE.DirectionalLight(0xffffff, 0.8);
+
+    key.position.set(-4, 5, 6);
+    rim.position.set(5, -2, 8);
+
+    this.scene.add(ambient, key, rim);
   }
-  
-  getTransitionShader() {
-    return {
-      uniforms: {
-        tDiffuse: { value: null },
-        uTime: { value: 0 },
-        uProgress: { value: 0 },
-        uResolution: { value: new THREE.Vector2(1, 1) },
-        uTexture: { value: null },
-        uGlitchIntensity: { value: 0 },
-        uDirection: { value: 1 },
-        uType: { value: 0 } // 0=glitch-wipe, 1=chromatic-split, 2=pixel-sort, 3=noise-reveal
-      },
-      vertexShader: `
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform sampler2D tDiffuse;
-        uniform float uTime;
-        uniform float uProgress;
-        uniform vec2 uResolution;
-        uniform sampler2D uTexture;
-        uniform float uGlitchIntensity;
-        uniform float uDirection;
-        uniform int uType;
-        varying vec2 vUv;
-        
-        // Yellow and black color palette
-        vec3 YELLOW = vec3(0.953, 0.804, 0.020); // #f3cd05
-        vec3 BLACK = vec3(0.0, 0.0, 0.0);        // #000000
-        
-        // Pseudo-random function
-        float random(vec2 st) {
-          return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453);
-        }
-        
-        // Noise function
-        float noise(vec2 st) {
-          vec2 i = floor(st);
-          vec2 f = fract(st);
-          float a = random(i);
-          float b = random(i + vec2(1.0, 0.0));
-          float c = random(i + vec2(0.0, 1.0));
-          float d = random(i + vec2(1.0, 1.0));
-          vec2 u = f * f * (3.0 - 2.0 * f);
-          return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
-        }
-        
-        // Glitch block effect
-        vec2 glitchWipe(vec2 uv, float progress) {
-          float glitchOffset = 0.0;
-          
-          // Create horizontal glitch blocks
-          float rowIndex = floor(uv.y * 20.0);
-          float rowRandom = random(vec2(rowIndex, floor(uTime * 30.0)));
-          
-          // Block wipe threshold
-          float wipeThreshold = progress;
-          
-          // Glitch intensity increases near the wipe edge
-          float edgeDist = abs(uv.x - wipeThreshold);
-          float edgeIntensity = smoothstep(0.2, 0.0, edgeDist);
-          
-          if (edgeIntensity > 0.0 && rowRandom > 0.4) {
-            float blockOffset = (random(vec2(rowIndex, uTime * 10.0)) - 0.5) * edgeIntensity * 0.3;
-            glitchOffset += blockOffset;
-          }
-          
-          // Wipe transition
-          float mask = step(uv.x, wipeThreshold + glitchOffset * 0.5);
-          
-          return vec2(uv.x + glitchOffset, mask);
-        }
-        
-        // Chromatic split with RGB separation
-        vec3 chromaticSplit(sampler2D tex, vec2 uv, float intensity) {
-          float r = texture2D(tex, uv + vec2(intensity * 0.02, 0.0)).r;
-          float g = texture2D(tex, uv).g;
-          float b = texture2D(tex, uv - vec2(intensity * 0.02, 0.0)).b;
-          return vec3(r, g, b);
-        }
-        
-        // Pixel sort effect
-        vec3 pixelSort(sampler2D tex, vec2 uv, float progress) {
-          float threshold = 0.3 + progress * 0.5;
-          float brightness = dot(texture2D(tex, uv).rgb, vec3(0.299, 0.587, 0.114));
-          
-          vec2 sortedUv = uv;
-          if (brightness > threshold) {
-            float sortOffset = sin(uv.y * 50.0 + uTime * 5.0) * 0.01 * progress;
-            sortedUv.x += sortOffset;
-          }
-          
-          return texture2D(tex, sortedUv).rgb;
-        }
-        
-        // Noise reveal transition
-        float noiseReveal(vec2 uv, float progress) {
-          float n = noise(uv * 10.0 + uTime * 0.5);
-          return smoothstep(progress - 0.1, progress + 0.1, n);
-        }
-        
-        void main() {
-          vec2 uv = vUv;
-          vec3 color = BLACK;
-          float alpha = 1.0;
-          
-          // Current page texture
-          vec3 texColor = texture2D(uTexture, uv).rgb;
-          
-          if (uType == 0) {
-            // Glitch Wipe
-            vec2 result = glitchWipe(uv, uProgress);
-            float mask = result.y;
-            
-            // Add chromatic aberration near the edge
-            float edgeDist = abs(uv.x - uProgress);
-            float caStrength = smoothstep(0.15, 0.0, edgeDist) * 0.03;
-            
-            vec3 caColor = chromaticSplit(uTexture, uv, caStrength + uGlitchIntensity);
-            
-            // Mix based on wipe progress
-            color = mix(caColor, YELLOW * 0.1, mask * 0.3);
-            
-            // Add scanlines
-            float scanline = sin(uv.y * 300.0) * 0.1;
-            color += scanline * (1.0 - mask);
-            
-            // Add noise
-            float n = random(uv + uTime) * 0.1;
-            color += n;
-            
-            // Glitch blocks overlay
-            if (edgeDist < 0.1 && random(vec2(floor(uv.y * 40.0), uTime * 20.0)) > 0.5) {
-              color = mix(color, YELLOW, 0.5);
-            }
-            
-          } else if (uType == 1) {
-            // Chromatic Split
-            float intensity = uProgress * 2.0;
-            
-            // RGB separation
-            vec2 offsetR = vec2(intensity * 0.03 * (random(vec2(uTime)) - 0.5), 0.0);
-            vec2 offsetB = vec2(-intensity * 0.03 * (random(vec2(uTime + 1.0)) - 0.5), 0.0);
-            
-            float r = texture2D(uTexture, uv + offsetR).r;
-            float g = texture2D(uTexture, uv).g;
-            float b = texture2D(uTexture, uv + offsetB).b;
-            
-            color = vec3(r, g, b);
-            
-            // Add noise overlay
-            float n = noise(uv * 20.0 + uTime) * intensity * 0.2;
-            color += n;
-            
-            // Scanlines
-            float scanline = sin(uv.y * 200.0) * 0.15 * intensity;
-            color += scanline;
-            
-            // Yellow tint near completion
-            if (uProgress > 0.7) {
-              color = mix(color, YELLOW, (uProgress - 0.7) * 0.5);
-            }
-            
-          } else if (uType == 2) {
-            // Pixel Sort
-            float sortThreshold = 0.3 + uProgress * 0.6;
-            float rowRandom = random(vec2(floor(uv.y * 30.0), uTime));
-            
-            vec2 sortedUv = uv;
-            
-            // Check brightness
-            float brightness = dot(texColor, vec3(0.299, 0.587, 0.114));
-            
-            if (brightness > sortThreshold || rowRandom > 0.8) {
-              float sortAmount = (brightness - sortThreshold) * uProgress * 0.1;
-              float wave = sin(uv.y * 100.0 + uTime * 10.0) * sortAmount;
-              sortedUv.x += wave + (random(vec2(uv.y * 10.0, uTime)) - 0.5) * 0.05 * uProgress;
-            }
-            
-            color = texture2D(uTexture, sortedUv).rgb;
-            
-            // Pixel block overlay
-            if (rowRandom > 0.9 && brightness > 0.5) {
-              float blockX = floor(uv.x * 40.0) / 40.0;
-              float blockY = floor(uv.y * 30.0) / 30.0;
-              color = mix(color, YELLOW, 0.7);
-            }
-            
-            // Noise
-            color += random(uv + uTime * 0.1) * 0.05;
-            
-          } else if (uType == 3) {
-            // Noise Reveal
-            float n = noise(uv * 8.0);
-            float reveal = smoothstep(uProgress - 0.2, uProgress + 0.2, n);
-            
-            // Dissolve effect
-            float dissolveNoise = noise(uv * 30.0 + uTime * 2.0);
-            float dissolve = step(uProgress, dissolveNoise);
-            
-            // Color distortion during transition
-            float distortion = sin(uv.y * 50.0 + uTime * 5.0) * (1.0 - reveal) * 0.02;
-            vec3 distortedColor = chromaticSplit(uTexture, uv + vec2(distortion, 0.0), 0.02);
-            
-            color = mix(YELLOW * 0.1, distortedColor, dissolve);
-            
-            // Grain
-            float grain = random(uv * 100.0 + uTime) * 0.15;
-            color += grain * (1.0 - dissolve);
-            
-            // Vignette during transition
-            float vignette = 1.0 - dot(uv - 0.5, uv - 0.5) * 1.5;
-            vignette = smoothstep(0.0, 0.7, vignette);
-            color *= vignette;
-          }
-          
-          // Global effects applied to all transition types
-          
-          // Additional scanlines
-          float globalScanline = sin(uv.y * 400.0 + uTime * 2.0) * 0.05;
-          color += globalScanline;
-          
-          // Glitch blocks at random positions during active transition
-          if (uProgress > 0.1 && uProgress < 0.9) {
-            float glitchSeed = floor(uTime * 15.0);
-            float blockRow = floor(uv.y * 15.0);
-            float blockRandom = random(vec2(glitchSeed, blockRow));
-            
-            if (blockRandom > 0.85) {
-              float blockIntensity = sin(uProgress * 3.14159) * 0.5;
-              color = mix(color, YELLOW, blockIntensity);
-            }
-          }
-          
-          gl_FragColor = vec4(color, 1.0);
-        }
-      `
-    };
+
+  buildGeometry() {
+    const yellow = new THREE.MeshPhongMaterial({ color: 0xf3cd05, shininess: 80 });
+    const black = new THREE.MeshPhongMaterial({ color: 0x050505, shininess: 35 });
+    const white = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 20 });
+    const line = new THREE.LineBasicMaterial({ color: 0xf3cd05, transparent: true, opacity: 0.55 });
+
+    this.buildGate(yellow, black);
+    this.buildFrames(line);
+    this.buildShards(yellow, black, white);
+    this.buildCards(yellow, black, white);
   }
-  
-  addEventListeners() {
-    window.addEventListener('resize', this.handleResize);
-    
-    // Intercept link clicks for same-origin navigation
-    document.addEventListener('click', this.handleClick);
-  }
-  
-  handleClick(e) {
-    const link = e.target.closest('a');
-    if (!link) return;
-    
-    const href = link.getAttribute('href');
-    if (!href) return;
-    
-    // Skip if PageManager will handle this (has data-internal-link)
-    if (link.hasAttribute('data-internal-link')) return;
-    
-    // Only handle same-origin links
-    if (href.startsWith('#') || href.startsWith('javascript:')) return;
-    
-    const url = new URL(href, window.location.href);
-    if (url.origin !== window.location.origin) return;
-    
-    // Don't intercept if modifier keys are pressed
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    
-    e.preventDefault();
-    this.start(href);
-  }
-  
-  captureScreenshot() {
-    // Use html2canvas approach with canvas
-    return new Promise((resolve) => {
-      // Create a temporary canvas to capture the page
-      const tempCanvas = document.createElement('canvas');
-      const ctx = tempCanvas.getContext('2d');
-      tempCanvas.width = window.innerWidth;
-      tempCanvas.height = window.innerHeight;
-      
-      // Fill with current background color
-      const bgColor = getComputedStyle(document.body).backgroundColor;
-      ctx.fillStyle = bgColor || '#000000';
-      ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-      
-      // Try to capture using modern API
-      if (document.documentElement.toDataURL) {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          ctx.drawImage(img, 0, 0);
-          resolve(tempCanvas);
-        };
-        img.onerror = () => resolve(tempCanvas);
-        img.src = document.documentElement.toDataURL();
-      } else {
-        // Fallback: draw current scroll position
-        window.scrollTo(0, 0);
-        
-        // Use html2canvas-like approach - clone the document
-        setTimeout(() => {
-          resolve(tempCanvas);
-        }, 50);
-      }
+
+  buildGate(yellow, black) {
+    const horizontalGeometry = new THREE.BoxGeometry(14, 1.2, 0.7);
+    const verticalGeometry = new THREE.BoxGeometry(1.2, 10, 0.7);
+    const gateParts = [
+      { name: 'left', geometry: verticalGeometry, material: black, open: [-7.2, 0, 0], closed: [-1.95, 0, 1.2] },
+      { name: 'right', geometry: verticalGeometry, material: black, open: [7.2, 0, 0], closed: [1.95, 0, 1.2] },
+      { name: 'top', geometry: horizontalGeometry, material: yellow, open: [0, 5.2, 0.2], closed: [0, 2.45, 1.5] },
+      { name: 'bottom', geometry: horizontalGeometry, material: yellow, open: [0, -5.2, 0.2], closed: [0, -2.45, 1.5] }
+    ];
+
+    this.gate = gateParts.map(part => {
+      const mesh = new THREE.Mesh(part.geometry, part.material);
+      mesh.name = part.name;
+      mesh.userData.open = new THREE.Vector3(...part.open);
+      mesh.userData.closed = new THREE.Vector3(...part.closed);
+      mesh.position.copy(mesh.userData.open);
+      this.world.add(mesh);
+      return mesh;
     });
   }
-  
-  async start(destination) {
-    // Handle both string URL and object with options
-    const destUrl = typeof destination === 'string' ? destination : destination?.url || destination;
-    
-    if (this.isActive || this.prefersReducedMotion) {
-      // Skip animation, navigate directly
-      window.location.href = destUrl;
+
+  buildFrames(material) {
+    for (let index = 0; index < 11; index++) {
+      const width = 3.8 + index * 1.1;
+      const height = 2.3 + index * 0.72;
+      const z = -index * 1.85;
+      const points = [
+        new THREE.Vector3(-width, -height, z),
+        new THREE.Vector3(width, -height, z),
+        new THREE.Vector3(width, height, z),
+        new THREE.Vector3(-width, height, z),
+        new THREE.Vector3(-width, -height, z)
+      ];
+
+      const frame = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material.clone());
+      frame.userData.baseZ = z;
+      this.frames.push(frame);
+      this.world.add(frame);
+    }
+  }
+
+  buildShards(yellow, black, white) {
+    const materials = [yellow, black, white];
+
+    for (let index = 0; index < 34; index++) {
+      const width = 0.18 + Math.random() * 0.55;
+      const height = 0.16 + Math.random() * 0.8;
+      const depth = 0.08 + Math.random() * 0.35;
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(width, height, depth),
+        materials[index % materials.length]
+      );
+
+      mesh.userData.seed = Math.random() * Math.PI * 2;
+      mesh.userData.radius = 2.2 + Math.random() * 7.5;
+      mesh.userData.speed = 0.6 + Math.random() * 1.6;
+      mesh.userData.open = new THREE.Vector3(
+        (Math.random() - 0.5) * 14,
+        (Math.random() - 0.5) * 9,
+        -10 - Math.random() * 15
+      );
+      mesh.userData.closed = new THREE.Vector3(
+        (Math.random() - 0.5) * 3.2,
+        (Math.random() - 0.5) * 2.1,
+        1.2 + Math.random() * 2.5
+      );
+      mesh.position.copy(mesh.userData.open);
+      mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      this.shards.push(mesh);
+      this.world.add(mesh);
+    }
+  }
+
+  buildCards(yellow, black, white) {
+    const cardMaterials = [white, yellow, black, white, yellow];
+
+    for (let index = 0; index < 7; index++) {
+      const card = new THREE.Mesh(
+        new THREE.BoxGeometry(1.9, 2.55, 0.08),
+        cardMaterials[index % cardMaterials.length]
+      );
+      card.userData.offset = index;
+      card.userData.open = new THREE.Vector3((index - 3) * 0.8, -6, -5 - index);
+      card.userData.closed = new THREE.Vector3((index - 3) * 0.38, 0.05, 1.8 + index * 0.07);
+      card.position.copy(card.userData.open);
+      card.rotation.set(-0.9, 0.2 * (index - 3), 0.08 * (index - 3));
+      this.cards.push(card);
+      this.world.add(card);
+    }
+  }
+
+  async transitionTo(url, options = {}) {
+    if (!this.ready || this.prefersReducedMotion) {
+      window.location.href = url;
       return;
     }
-    
-    this.isActive = true;
-    this.destination = destUrl;
-    this.startTime = performance.now();
-    
-    // Capture current page
-    await this.capturePageTexture();
-    
-    // Show canvas
-    this.canvas.style.opacity = '1';
-    this.canvas.style.pointerEvents = 'auto';
-    
-    // Start animation
-    this.animate();
-    
-    // Navigate after animation
-    setTimeout(() => {
-      window.location.href = destUrl;
-    }, this.duration);
+
+    await this.start({ url, ...options, holdOnComplete: true });
+    sessionStorage.setItem(this.options.incomingKey, JSON.stringify({
+      from: window.location.pathname,
+      to: new URL(url, window.location.href).pathname,
+      at: Date.now()
+    }));
+    window.location.href = url;
   }
-  
-  async capturePageTexture() {
-    // Create texture from current page state
-    // We'll use a simplified approach - render the body to a canvas
-    
-    const captureCanvas = document.createElement('canvas');
-    captureCanvas.width = window.innerWidth;
-    captureCanvas.height = window.innerHeight;
-    const ctx = captureCanvas.getContext('2d');
-    
-    // Fill with black background
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, captureCanvas.width, captureCanvas.height);
-    
-    // Try to draw the document
+
+  async start(options = {}) {
+    if (!this.ready || this.prefersReducedMotion) return;
+    return this.playPhase('out', this.options.outDuration, options);
+  }
+
+  async end(options = {}) {
+    if (!this.ready || this.prefersReducedMotion) return;
+    return this.playPhase('in', this.options.inDuration, options);
+  }
+
+  playIncomingTransition() {
+    const rawState = sessionStorage.getItem(this.options.incomingKey);
+    if (!rawState) return;
+
+    sessionStorage.removeItem(this.options.incomingKey);
+
     try {
-      // Get computed background
-      const bodyBg = getComputedStyle(document.body).backgroundColor;
-      if (bodyBg && bodyBg !== 'rgba(0, 0, 0, 0)' && bodyBg !== 'transparent') {
-        ctx.fillStyle = bodyBg;
-        ctx.fillRect(0, 0, captureCanvas.width, captureCanvas.height);
-      }
-      
-      // Draw representative content - yellow accent bars
-      ctx.fillStyle = '#f3cd05';
-      
-      // Hero section bar
-      const heroSection = document.querySelector('.hero-brutalist');
-      if (heroSection) {
-        const rect = heroSection.getBoundingClientRect();
-        ctx.fillRect(0, 0, captureCanvas.width, rect.height);
-      }
-      
-    } catch (e) {
-      console.warn('Page capture failed:', e);
-    }
-    
-    // Create Three.js texture
-    this.currentTexture = new THREE.CanvasTexture(captureCanvas);
-    this.currentTexture.minFilter = THREE.LinearFilter;
-    this.currentTexture.magFilter = THREE.LinearFilter;
-    
-    this.uniforms.uTexture.value = this.currentTexture;
-  }
-  
-  animate(time) {
-    if (!this.isActive) return;
-    
-    const elapsed = (time || performance.now()) - this.startTime;
-    const progress = Math.min(elapsed / this.duration, 1);
-    
-    // Update uniforms
-    this.uniforms.uTime.value = elapsed * 0.001;
-    this.uniforms.uProgress.value = this.easeInOutCubic(progress);
-    this.uniforms.uGlitchIntensity.value = Math.sin(progress * Math.PI) * 2.0;
-    
-    // Render
-    this.composer.render();
-    
-    if (progress < 1) {
-      this.animationId = requestAnimationFrame(this.animate);
+      const state = JSON.parse(rawState);
+      if (!state.at || Date.now() - state.at > 8000) return;
+      setTimeout(() => this.end(state), 80);
+    } catch (error) {
+      console.warn('[PageTransition] Failed to read incoming transition state', error);
     }
   }
-  
+
+  playPhase(phase, duration, options) {
+    if (this.isActive) return Promise.resolve();
+
+    this.phase = phase;
+    this.isActive = true;
+    this.startedAt = performance.now();
+    this.duration = duration;
+    this.activeOptions = options;
+    this.clock.start();
+    this.setHud(options);
+    this.shell.classList.add('is-active');
+    this.shell.dataset.phase = phase;
+    document.body.classList.add('is-transitioning');
+
+    return new Promise(resolve => {
+      this.resolvePhase = resolve;
+      this.animatePhase();
+    });
+  }
+
+  setHud(options = {}) {
+    const target = this.hud.querySelector('.transition-hud__target');
+    const label = this.hud.querySelector('.transition-hud__label');
+    const targetUrl = options.url || options.to || window.location.pathname;
+
+    if (target) {
+      target.textContent = new URL(targetUrl, window.location.href).pathname.toUpperCase();
+    }
+    if (label) {
+      label.textContent = this.phase === 'in' ? 'PAGE LOCKED' : 'PAGE TRANSFER';
+    }
+  }
+
+  animatePhase() {
+    const elapsed = performance.now() - this.startedAt;
+    const rawProgress = Math.min(elapsed / this.duration, 1);
+    const progress = this.phase === 'in' ? 1 - rawProgress : rawProgress;
+    const eased = this.easeOutExpo(progress);
+    const time = this.clock.getElapsedTime();
+
+    this.updateScene(eased, rawProgress, time);
+    this.renderer.render(this.scene, this.camera);
+    this.updateHud(rawProgress);
+
+    if (rawProgress < 1) {
+      this.animationId = requestAnimationFrame(this.animatePhase);
+      return;
+    }
+
+    this.completePhase();
+  }
+
+  updateScene(progress, rawProgress, time) {
+    const pulse = Math.sin(time * 8) * 0.035;
+    this.world.rotation.y = (progress - 0.5) * 0.45;
+    this.world.rotation.x = (0.5 - progress) * 0.18;
+    this.world.rotation.z = Math.sin(progress * Math.PI) * 0.08;
+
+    this.camera.position.z = 9 - progress * 5.7;
+    this.camera.position.x = Math.sin(progress * Math.PI) * 0.45;
+    this.camera.position.y = Math.cos(progress * Math.PI) * 0.18;
+    this.camera.lookAt(0, 0, 0);
+
+    this.gate.forEach(mesh => {
+      mesh.position.lerpVectors(mesh.userData.open, mesh.userData.closed, progress);
+      mesh.rotation.z = (mesh.name === 'top' || mesh.name === 'bottom') ? pulse : -pulse;
+    });
+
+    this.frames.forEach((frame, index) => {
+      frame.position.z = progress * 18 + Math.sin(time + index) * 0.15;
+      frame.rotation.z = (index % 2 === 0 ? 1 : -1) * progress * 0.12;
+      frame.material.opacity = 0.16 + (1 - Math.abs(progress - 0.5) * 2) * 0.55;
+    });
+
+    this.shards.forEach((mesh, index) => {
+      const stagger = Math.min(1, Math.max(0, progress * 1.25 - index * 0.012));
+      const orbit = time * mesh.userData.speed + mesh.userData.seed;
+      mesh.position.lerpVectors(mesh.userData.open, mesh.userData.closed, this.easeInOutCubic(stagger));
+      mesh.position.x += Math.cos(orbit) * mesh.userData.radius * 0.035;
+      mesh.position.y += Math.sin(orbit) * mesh.userData.radius * 0.025;
+      mesh.rotation.x += 0.035 + index * 0.0008;
+      mesh.rotation.y += 0.025;
+      mesh.rotation.z += 0.018;
+    });
+
+    this.cards.forEach((card, index) => {
+      const cardProgress = Math.min(1, Math.max(0, progress * 1.45 - index * 0.08));
+      card.position.lerpVectors(card.userData.open, card.userData.closed, this.easeOutExpo(cardProgress));
+      card.rotation.x = -0.9 + cardProgress * 1.08;
+      card.rotation.y = (index - 3) * (0.25 - cardProgress * 0.12);
+      card.rotation.z = Math.sin(time * 2 + index) * 0.04;
+    });
+
+    this.shell.style.setProperty('--transition-progress', rawProgress.toFixed(3));
+    this.shell.style.opacity = this.phase === 'in'
+      ? String(Math.max(0, 1 - rawProgress * 1.15))
+      : String(Math.min(1, 0.12 + rawProgress * 1.18));
+  }
+
+  updateHud(progress) {
+    const counter = this.hud.querySelector('.transition-hud__counter');
+    if (counter) {
+      const value = Math.round(progress * 100).toString().padStart(2, '0');
+      counter.textContent = value;
+    }
+  }
+
+  completePhase() {
+    const completedPhase = this.phase;
+    cancelAnimationFrame(this.animationId);
+    this.animationId = null;
+    this.isActive = false;
+    this.phase = 'idle';
+
+    const holdOverlay = this.activeOptions && this.activeOptions.holdOnComplete && completedPhase === 'out';
+    if (!holdOverlay) {
+      this.shell.classList.remove('is-active');
+      this.shell.removeAttribute('data-phase');
+      this.shell.style.opacity = '0';
+      document.body.classList.remove('is-transitioning');
+    }
+
+    if (this.resolvePhase) {
+      this.resolvePhase();
+      this.resolvePhase = null;
+    }
+  }
+
+  handleResize() {
+    if (!this.renderer || !this.camera) return;
+
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(width, height, false);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.options.pixelRatio));
+  }
+
+  easeOutExpo(t) {
+    return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+  }
+
   easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   }
-  
-  setTransitionType(type) {
-    const types = {
-      'glitch-wipe': 0,
-      'chromatic-split': 1,
-      'pixel-sort': 2,
-      'noise-reveal': 3
-    };
-    
-    if (types.hasOwnProperty(type)) {
-      this.currentType = type;
-      // Update shader uniform
-      if (this.composer && this.composer.passes[1]) {
-        this.composer.passes[1].uniforms.uType.value = types[type];
-      }
-    }
-  }
-  
-  isTransitioning() {
-    return this.isActive;
-  }
-  
-  handleResize() {
-    if (!this.renderer) return;
-    
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    
-    this.renderer.setSize(width, height);
-    this.composer.setSize(width, height);
-    
-    this.uniforms.uResolution.value.set(width, height);
-  }
-  
+
   destroy() {
-    this.isActive = false;
-    
-    if (this.animationId) {
-      cancelAnimationFrame(this.animationId);
-    }
-    
+    cancelAnimationFrame(this.animationId);
     window.removeEventListener('resize', this.handleResize);
-    document.removeEventListener('click', this.handleClick);
-    
-    if (this.currentTexture) {
-      this.currentTexture.dispose();
-    }
-    
-    if (this.renderer) {
-      this.renderer.dispose();
-    }
-    
-    if (this.canvas && this.canvas.parentNode) {
-      this.canvas.parentNode.removeChild(this.canvas);
-    }
+    document.body.classList.remove('is-transitioning');
+
+    if (this.renderer) this.renderer.dispose();
+    if (this.shell && this.shell.parentNode) this.shell.parentNode.removeChild(this.shell);
+
+    this.ready = false;
   }
 }
 
-// Auto-initialize on DOM ready
 function initPageTransitions() {
-  // Check for reduced motion
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  
-  if (prefersReducedMotion) {
-    console.log('[PageTransition] Reduced motion preferred - transitions disabled');
-    return null;
-  }
-  
-  // Wait for Three.js to be available
-  if (typeof THREE === 'undefined') {
-    console.warn('[PageTransition] Three.js not loaded');
-    return null;
-  }
-  
-  return new PageTransition();
+  if (window.pageTransition) return window.pageTransition;
+  if (typeof THREE === 'undefined') return null;
+
+  window.pageTransition = new PageTransition();
+  return window.pageTransition.init();
 }
 
-// Initialize - wait for THREE and postprocessing to be loaded
-function waitForThreeAndInit() {
-  if (typeof THREE === 'undefined' || 
-      typeof THREE.EffectComposer === 'undefined' ||
-      typeof THREE.RenderPass === 'undefined' ||
-      typeof THREE.ShaderPass === 'undefined') {
-    // Retry in 100ms
-    setTimeout(waitForThreeAndInit, 100);
+function waitForThreeAndInit(attempt = 0) {
+  if (typeof THREE === 'undefined') {
+    if (attempt < 30) setTimeout(() => waitForThreeAndInit(attempt + 1), 100);
     return;
   }
-  window.pageTransition = initPageTransitions();
+
+  initPageTransitions();
 }
 
 if (document.readyState === 'loading') {
@@ -608,6 +431,5 @@ if (document.readyState === 'loading') {
   waitForThreeAndInit();
 }
 
-// Expose to global scope for non-module usage
 window.PageTransition = PageTransition;
 window.initPageTransitions = initPageTransitions;

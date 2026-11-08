@@ -1,0 +1,131 @@
+// 3D PAGE TRANSITIONS
+.transition-shell {
+    position: fixed;
+    inset: 0;
+    z-index: 10002;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    background:
+        linear-gradient(90deg, rgba($yellow, 0.16) 1px, transparent 1px),
+        linear-gradient(0deg, rgba($yellow, 0.12) 1px, transparent 1px),
+        $black;
+    background-size: 64px 64px;
+    perspective: 1200px;
+    transform-style: preserve-3d;
+    transition: visibility 0s linear 120ms;
+    
+    &.is-active {
+        visibility: visible;
+        transition: none;
+    }
+}
+
+#transition-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.transition-hud {
+    position: absolute;
+    inset: 20px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto 1fr auto;
+    gap: 12px;
+    color: $yellow;
+    font-family: $font-mono;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-shadow: 2px 2px 0 $black;
+    pointer-events: none;
+    
+    &::before,
+    &::after {
+        content: '';
+        position: absolute;
+        width: 110px;
+        height: 110px;
+        border: 2px solid $yellow;
+        transform: translateZ(80px);
+    }
+    
+    &::before {
+        top: 0;
+        left: 0;
+        border-right: 0;
+        border-bottom: 0;
+    }
+    
+    &::after {
+        right: 0;
+        bottom: 0;
+        border-left: 0;
+        border-top: 0;
+    }
+}
+
+.transition-hud__label,
+.transition-hud__target,
+.transition-hud__counter {
+    position: relative;
+    z-index: 1;
+    background-color: $black;
+    border: 2px solid $yellow;
+    box-shadow: 8px 8px 0 rgba($yellow, 0.22);
+    padding: 10px 14px;
+}
+
+.transition-hud__target {
+    grid-column: 1 / -1;
+    align-self: end;
+    justify-self: start;
+    max-width: min(720px, calc(100vw - 40px));
+    overflow-wrap: anywhere;
+    font-size: clamp(28px, 6vw, 84px);
+    line-height: 0.92;
+    letter-spacing: 0;
+    transform: rotateX(13deg) rotateY(-16deg) translateZ(70px);
+    transform-origin: left bottom;
+}
+
+.transition-hud__counter {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 74px;
+    text-align: right;
+}
+
+.transition-shell[data-phase='in'] .transition-hud__target {
+    transform: rotateX(-10deg) rotateY(12deg) translateZ(70px);
+}
+
+body.is-transitioning {
+    overflow: hidden;
+    
+    .custom-cursor,
+    .custom-cursor-depth {
+        opacity: 1 !important;
+    }
+}
+
+@media screen and (max-width: 700px) {
+    .transition-hud {
+        inset: 12px;
+    }
+    
+    .transition-hud__target {
+        font-size: clamp(24px, 12vw, 56px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .transition-shell {
+        display: none;
+    }
+    
+    body.is-transitioning {
+        overflow: auto;
+    }
+}

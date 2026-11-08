@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <base href="/">
     <title>Building Autonomous AI Systems | Pandelis Zembashis</title>
     <link rel="stylesheet" href="./style.scss">
     <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-icon-180x180.png">
@@ -100,14 +101,6 @@
         </div>
     </article>
 
-    <!-- Footer -->
-    <div class="box footer article-footer">
-        You are being tracked by the Google. This site is using google analytics. If you don't want to be tracked use
-        an ad blocker.
-        By using the site you're consenting to being a number in my analytics dashboard.
-        <a href="#okiedoke">&times;</a>
-    </div>
-
     <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
@@ -138,6 +131,11 @@
         (function() {
             // Parse URL parameters for article ID
             function getArticleId() {
+                const pathMatch = window.location.pathname.match(/^\/article\/([^/]+)\/?$/);
+                if (pathMatch) {
+                    return decodeURIComponent(pathMatch[1]);
+                }
+
                 const params = new URLSearchParams(window.location.search);
                 return params.get('id') || window.location.hash.slice(1);
             }
@@ -181,7 +179,7 @@
                     const prevArticle = articles[currentIndex - 1];
                     prevContainer.innerHTML = `
                         <span class="nav-direction">← PREVIOUS</span>
-                        <a href="./article.html?id=${prevArticle.slug}" data-internal-link class="nav-article-title" data-cursor="hover">
+                        <a href="/article/${encodeURIComponent(prevArticle.slug)}" data-internal-link class="nav-article-title" data-cursor="hover">
                             ${prevArticle.title}
                         </a>
                     `;
@@ -194,7 +192,7 @@
                     const nextArticle = articles[currentIndex + 1];
                     nextContainer.innerHTML = `
                         <span class="nav-direction">NEXT →</span>
-                        <a href="./article.html?id=${nextArticle.slug}" data-internal-link class="nav-article-title" data-cursor="hover">
+                        <a href="/article/${encodeURIComponent(nextArticle.slug)}" data-internal-link class="nav-article-title" data-cursor="hover">
                             ${nextArticle.title}
                         </a>
                     `;
@@ -219,7 +217,7 @@
                 }
 
                 try {
-                    const response = await fetch('/data/articles.json');
+                    const response = await fetch('/articles.json');
                     if (!response.ok) {
                         throw new Error('Failed to load articles');
                     }

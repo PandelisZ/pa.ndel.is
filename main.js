@@ -4,19 +4,24 @@ const subtitleNode = document.querySelector('.blade--right > h1')
 const profileHeaderText = document.querySelector('#profile > h1')
 const projectsHeaderText = document.querySelector('#projects > h1')
 const visitorNameNodes = document.querySelectorAll(".visitorName")
-const getInTouch = document.querySelector("#social > h1")
+const socialHeaderText = document.querySelector("#social > h1")
 const gridItems = document.querySelectorAll('.grid__item.readme')
 const modalTemplate = document.querySelector('.modalTemplate')
 const modalCode = document.querySelector('.modalTemplate > div.markdown')
 
+const setTranslateX = function(node, value) {
+  if (!node) return
+  node.style.transform = `translateX(${value}px)`
+}
+
 const mastheadScroller = function(scrollPosition) {
 
-    nameNode.style = `transform: translateX(-${scrollPosition*7}px)`
-    subtitleNode.style = `transform: translateX(${scrollPosition*2}px)`
+    setTranslateX(nameNode, -(scrollPosition*7))
+    setTranslateX(subtitleNode, scrollPosition*2)
 
-    profileHeaderText.style = `transform: translateX(-${scrollPosition*1.2}px)`
-    projectsHeaderText.style = `transform: translateX(-${scrollPosition*1.2}px)`
-    getInTouch.style = `transform: translateX(-${scrollPosition*2}px)`
+    setTranslateX(profileHeaderText, -(scrollPosition*1.2))
+    setTranslateX(projectsHeaderText, -(scrollPosition*1.2))
+    setTranslateX(socialHeaderText, -(scrollPosition*2))
 
 }
 
@@ -915,4 +920,3 @@ if (document.readyState === 'loading') {
     }
   });
 })();
-

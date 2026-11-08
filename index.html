@@ -27,6 +27,11 @@
 
     <div class="grid-lines"></div>
 
+    <nav class="persistent-nav" aria-label="Site">
+        <a href="talks.html" data-internal-link data-cursor="hover">Talks</a>
+        <a href="writing.html" data-internal-link data-cursor="hover" class="persistent-nav__highlight">Writing</a>
+    </nav>
+
     <section class="blade blade__overflow hero-brutalist">
         <div class="hero-border top"></div>
         <div class="hero-border left"></div>
@@ -45,10 +50,10 @@
         <div class="title" id="profile" data-section="01">
             <h1 data-text-reveal>profile</h1>
             <div class="nav" style="display:none">
+                <h2><a href="#current">Shipping</a></h2>
                 <h2><a href="#projects">Projects</a></h2>
                 <h2><a href="#media">In the Media</a></h2>
-                <h2><a href="#social">Get in touch</a></h2>
-                <h2><a href="writing.html" data-internal-link>Blog</a></h2>
+                <h2><a href="#social">Me on the web</a></h2>
                 <h2><a href="writing.html" data-internal-link>WRITING</a></h2>
             </div>
         </div>
@@ -64,8 +69,12 @@
                 Founder of <a href="https://vex.sc">Vex</a>, building better tools for how software gets made.
             </p>
             <p>
+                These days that mostly means being a <a href="#current">slave to the tokens</a> — pairing with AI agents all day
+                to build things like the projects below, instead of writing every line myself.
+            </p>
+            <p>
                 In other news check out some of my <a href="#projects">👨‍🔧 projects</a>, <a href="writing.html" data-internal-link>📝
-                    blog</a> or drop a follow on <a href="https://twitter.com/pandelisz">🐦 twitter</a>
+                    writing</a> or drop a follow on <a href="https://twitter.com/pandelisz">🐦 twitter</a>
                 to reinforce my vanity.
             </p>
             <p>
@@ -83,7 +92,7 @@
             </p>
             <p>
                 In other news check out some of my <a href="#projects">👨‍🔧 projects</a>, <a href="writing.html" data-internal-link>📝
-                    blog</a> or drop a follow on <a href="https://twitter.com/pandelisz">🐦 twitter</a>
+                    writing</a> or drop a follow on <a href="https://twitter.com/pandelisz">🐦 twitter</a>
                 to reinforce my vanity.
             </p>
             <p>
@@ -92,25 +101,65 @@
         </div>
 
     </div>
-    <div class="box footer">
+    <div class="content">
 
-        You are being tracked by the Google. This site is using google analytics. If you don't want to be tracked use
-        an ad blocker.
-        By using the site you're consenting to being a number in my analytics dashboard.
+        <div class="title" id="current" data-section="01b">
+            <h1 data-text-reveal>shipping</h1>
+            <div class="nav" style="display:none">
+                <h2><a href="#profile">Profile</a></h2>
+                <h2><a href="#projects">Projects</a></h2>
+                <h2><a href="#media">In the Media</a></h2>
+                <h2><a href="#social">Me on the web</a></h2>
+                <h2><a href="writing.html" data-internal-link>WRITING</a></h2>
+            </div>
+        </div>
 
-        <a href="#okiedoke">&times;</a>
+        <div>
+            <div class="grid grid--showcase">
+
+                <div class="grid__item showcase-card">
+                    <img class="showcase-card__shot" src="/public/projects/roder.jpg" alt="Roder homepage hero, runtime infrastructure for coding agents" loading="lazy">
+                    <div class="project--title">
+                        <a href="https://roder.sh" target="_blank" rel="noopener" data-cursor="hover">roder.sh</a>
+                    </div>
+                    <p>
+                        A Rust-native, extension-first harness for coding agents — the stable runtime underneath the TUI, app-server, and every provider integration, so teams stop rebuilding the same agent plumbing from scratch.
+                    </p>
+                    <ul class="project--meta">
+                        <li class="project-date">2026</li>
+                        <li>rust</li>
+                        <li>agents</li>
+                    </ul>
+                </div>
+
+                <div class="grid__item showcase-card">
+                    <img class="showcase-card__shot" src="/public/projects/vex.jpg" alt="Vex homepage hero, monorepo source control for the agentic era" loading="lazy">
+                    <div class="project--title">
+                        <a href="https://vex.sc" target="_blank" rel="noopener" data-cursor="hover">vex.sc</a>
+                    </div>
+                    <p>
+                        Monorepo-first source control built for a world where agents commit as often as humans — a live JJ-native graph that ties source, runtime signals, and deploys into one continuously rebuilding loop.
+                    </p>
+                    <ul class="project--meta">
+                        <li class="project-date">2026</li>
+                        <li>version control</li>
+                        <li>desktop</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
 
     </div>
-
     <div class="content">
 
         <div class="title" id="projects" data-section="02">
             <h1 data-text-reveal>projects</h1>
             <div class="nav" style="display:none">
                 <h2><a href="#profile">Profile</a></h2>
+                <h2><a href="#current">Shipping</a></h2>
                 <h2><a href="#media">In the Media</a></h2>
-                <h2><a href="#social">Get in touch</a></h2>
-                <h2><a href="writing.html" data-internal-link>Blog</a></h2>
+                <h2><a href="#social">Me on the web</a></h2>
                 <h2><a href="writing.html" data-internal-link>WRITING</a></h2>
             </div>
         </div>
@@ -122,51 +171,35 @@
                     <h3 class="project-category">recent work</h3>
                 </div>
 
-                <div class="grid__item readme" data-readme="https://raw.githubusercontent.com/PandelisZ/jalla/master/README.md">
+                <div class="grid__item readme" data-readme="https://raw.githubusercontent.com/PandelisZ/musiccore/main/README.md">
                     <div class="project--title">
-                        <a href="https://github.com/PandelisZ/jalla">
-                            jalla
+                        <a href="https://github.com/PandelisZ/musiccore">
+                            musiccore
                         </a>
                     </div>
                     <p>
-                        OpenAI /responses compatible middleware for Anthropic, OpenAI, and Gemini
+                        Public step sequencer humans and AI agents compose together live over MCP — chords, layered clips, and full arrangements
                     </p>
                     <ul class="project--meta">
-                        <li class="project-date">2025</li>
-                        <li>go</li>
-                        <li>ai</li>
+                        <li class="project-date">2026</li>
+                        <li>mcp</li>
+                        <li>cloudflare</li>
                     </ul>
                 </div>
 
-                <div class="grid__item readme" data-readme="https://raw.githubusercontent.com/PandelisZ/beamline/master/README.md">
+                <div class="grid__item readme" data-readme="https://raw.githubusercontent.com/PandelisZ/codex-web-sdk/master/README.md">
                     <div class="project--title">
-                        <a href="https://github.com/PandelisZ/beamline">
-                            beamline
+                        <a href="https://github.com/PandelisZ/codex-web-sdk">
+                            codex-web-sdk
                         </a>
                     </div>
                     <p>
-                        Event streaming and messaging platform
+                        Browser SDK surface for embedding Codex-style threaded agents in web apps
                     </p>
                     <ul class="project--meta">
-                        <li class="project-date">2025</li>
-                        <li>go</li>
-                        <li>streaming</li>
-                    </ul>
-                </div>
-
-                <div class="grid__item readme" data-readme="https://raw.githubusercontent.com/PandelisZ/gut/master/README.md">
-                    <div class="project--title">
-                        <a href="https://github.com/PandelisZ/gut">
-                            gut
-                        </a>
-                    </div>
-                    <p>
-                        Gomputer use tooling - AI agent infrastructure
-                    </p>
-                    <ul class="project--meta">
-                        <li class="project-date">2025</li>
-                        <li>go</li>
-                        <li>ai</li>
+                        <li class="project-date">2026</li>
+                        <li>typescript</li>
+                        <li>sdk</li>
                     </ul>
                 </div>
 
@@ -180,41 +213,73 @@
                         Game development tooling framework
                     </p>
                     <ul class="project--meta">
-                        <li class="project-date">2025</li>
+                        <li class="project-date">2026</li>
                         <li>go</li>
                         <li>gamedev</li>
                     </ul>
                 </div>
 
-                <div class="grid__item readme" data-readme="https://raw.githubusercontent.com/PandelisZ/CLIProxyAPI/master/README.md">
+                <div class="grid__item readme" data-readme="https://raw.githubusercontent.com/PandelisZ/gut/master/README.md">
                     <div class="project--title">
-                        <a href="https://github.com/PandelisZ/CLIProxyAPI">
-                            CLIProxyAPI
+                        <a href="https://github.com/PandelisZ/gut">
+                            gut
                         </a>
                     </div>
                     <p>
-                        Wrap AI CLIs as OpenAI-compatible API service
+                        Gomputer use tooling for AI agent infrastructure
                     </p>
                     <ul class="project--meta">
-                        <li class="project-date">2025</li>
-                        <li>python</li>
-                        <li>api</li>
+                        <li class="project-date">2026</li>
+                        <li>go</li>
+                        <li>ai</li>
                     </ul>
                 </div>
 
-                <div class="grid__item readme" data-readme="https://raw.githubusercontent.com/PandelisZ/dootfiles/master/README.md">
+                <div class="grid__item readme" data-readme="https://raw.githubusercontent.com/PandelisZ/skills/master/README.md">
                     <div class="project--title">
-                        <a href="https://github.com/PandelisZ/dootfiles">
-                            dootfiles
+                        <a href="https://github.com/PandelisZ/skills">
+                            skills
                         </a>
                     </div>
                     <p>
-                        Dotfiles and dev environment configuration
+                        Curated agent skills for Codex, Cursor, Claude Code, and other coding agents
                     </p>
                     <ul class="project--meta">
-                        <li class="project-date">2024</li>
-                        <li>shell</li>
-                        <li>devops</li>
+                        <li class="project-date">2026</li>
+                        <li>agents</li>
+                        <li>tooling</li>
+                    </ul>
+                </div>
+
+                <div class="grid__item readme" data-readme="https://raw.githubusercontent.com/PandelisZ/codex-in-the-kernel/main/README.md">
+                    <div class="project--title">
+                        <a href="https://github.com/PandelisZ/codex-in-the-kernel">
+                            codex-in-the-kernel
+                        </a>
+                    </div>
+                    <p>
+                        Kernel-aware Codex research harness running inside a disposable ARM64 VM
+                    </p>
+                    <ul class="project--meta">
+                        <li class="project-date">2026</li>
+                        <li>rust</li>
+                        <li>research</li>
+                    </ul>
+                </div>
+
+                <div class="grid__item readme" data-readme="https://raw.githubusercontent.com/PandelisZ/jalla/master/README.md">
+                    <div class="project--title">
+                        <a href="https://github.com/PandelisZ/jalla">
+                            jalla
+                        </a>
+                    </div>
+                    <p>
+                        OpenAI /responses compatible middleware for Anthropic, OpenAI, and Gemini
+                    </p>
+                    <ul class="project--meta">
+                        <li class="project-date">2026</li>
+                        <li>go</li>
+                        <li>ai</li>
                     </ul>
                 </div>
 
@@ -582,9 +647,9 @@
             <h1 data-text-reveal>in the media</h1>
             <div class="nav" style="display:none">
                 <h2><a href="#profile">Profile</a></h2>
+                <h2><a href="#current">Shipping</a></h2>
                 <h2><a href="#projects">Projects</a></h2>
-                <h2><a href="#social">Get in touch</a></h2>
-                <h2><a href="writing.html" data-internal-link>Blog</a></h2>
+                <h2><a href="#social">Me on the web</a></h2>
                 <h2><a href="writing.html" data-internal-link>WRITING</a></h2>
             </div>
         </div>
@@ -767,24 +832,49 @@
     <div class="social">
 
             <div class="title" id="social" data-section="03">
-                <h1 data-text-reveal>get in touch</h1>
+                <h1 data-text-reveal>me on the web</h1>
                 <div class="nav" style="display:none">
                     <h2><a href="#profile">Profile</a></h2>
+                    <h2><a href="#current">Shipping</a></h2>
                     <h2><a href="#projects">Projects</a></h2>
                     <h2><a href="#media">In the Media</a></h2>
-                    <h2><a href="writing.html" data-internal-link>Blog</a></h2>
                     <h2><a href="writing.html" data-internal-link>WRITING</a></h2>
                 </div>
             </div>
 
             <div class="content">
 
-                <form>
-                    <input type="text" id="name" placeholder="name">
-                    <input type="email" id="email" placeholder="e-mail">
-                    <textarea id="message"></textarea>
-                    <button type="submit" class="btn btn-primary">say hi</button>
-                </form>
+                <div class="web-links grid">
+                    <a class="web-link-card grid__item" href="https://uk.linkedin.com/in/pandelis" target="_blank" rel="me noopener" data-cursor="hover">
+                        <span class="web-link-card__label">LinkedIn</span>
+                        <span class="web-link-card__handle">/in/pandelis</span>
+                        <span class="web-link-card__note">Professional profile</span>
+                    </a>
+
+                    <a class="web-link-card grid__item" href="https://x.com/pandelisz" target="_blank" rel="me noopener" data-cursor="hover">
+                        <span class="web-link-card__label">X</span>
+                        <span class="web-link-card__handle">@pandelisz</span>
+                        <span class="web-link-card__note">Short-form thoughts</span>
+                    </a>
+
+                    <a class="web-link-card grid__item" href="https://github.com/PandelisZ" target="_blank" rel="me noopener" data-cursor="hover">
+                        <span class="web-link-card__label">GitHub</span>
+                        <span class="web-link-card__handle">PandelisZ</span>
+                        <span class="web-link-card__note">Code and maintained projects</span>
+                    </a>
+
+                    <a class="web-link-card grid__item" href="https://stackoverflow.com/users/4038702/pandelis" target="_blank" rel="me noopener" data-cursor="hover">
+                        <span class="web-link-card__label">Stack Overflow</span>
+                        <span class="web-link-card__handle">Pandelis</span>
+                        <span class="web-link-card__note">Answers and old debugging scars</span>
+                    </a>
+
+                    <a class="web-link-card grid__item" href="https://devpost.com/pandelis" target="_blank" rel="me noopener" data-cursor="hover">
+                        <span class="web-link-card__label">Devpost</span>
+                        <span class="web-link-card__handle">pandelis</span>
+                        <span class="web-link-card__note">Hackathon archive</span>
+                    </a>
+                </div>
 
             </div>
 

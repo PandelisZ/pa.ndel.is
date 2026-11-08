@@ -1,0 +1,192 @@
+// WRITING INDEX
+.writing-page {
+    .article-grid {
+        border-top: 2px solid $black;
+        border-left: 2px solid $black;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        perspective: 1400px;
+        
+        @media screen and (max-width: 900px) {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .pagination {
+        border: 2px solid $black;
+        border-top: 0;
+        padding: 30px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: $off-white;
+    }
+}
+
+.writing-card {
+    min-height: 360px;
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    gap: 18px;
+    padding: 34px 34px 32px 72px;
+    position: relative;
+    overflow: hidden;
+    transform-style: preserve-3d;
+    transition:
+        background-color 120ms ease,
+        transform 220ms ease,
+        box-shadow 220ms ease;
+    
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 18px;
+        border: 1px solid rgba($black, 0.18);
+        transform: translateZ(30px);
+        pointer-events: none;
+    }
+    
+    &::after {
+        content: '';
+        position: absolute;
+        inset: auto -10% -22px 22%;
+        height: 54px;
+        background-color: $black;
+        transform: rotate(-3deg) translateZ(-20px);
+        opacity: 0;
+        transition: opacity 160ms ease;
+    }
+    
+    &:hover {
+        background-color: $yellow;
+        transform: rotateX(3deg) rotateY(-5deg) translateY(-6px);
+        box-shadow: 14px 14px 0 $black;
+        
+        &::after {
+            opacity: 1;
+        }
+        
+        .writing-card__title a {
+            text-decoration: none;
+            background-color: $black;
+            color: $yellow;
+        }
+    }
+}
+
+.writing-card__rail {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 0;
+    border-right: 2px solid $black;
+    background-color: $black;
+    color: $yellow;
+    font-size: 10px;
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+}
+
+.writing-card__meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+    border-bottom: 2px solid $black;
+    padding-bottom: 14px;
+    font-family: $font-mono;
+    font-size: 11px;
+    text-transform: uppercase;
+    
+    .article-tags {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin: 0;
+    }
+}
+
+.writing-card__tag {
+    border: 1px solid $black;
+    padding: 3px 7px;
+    background-color: $white;
+}
+
+.writing-card__title {
+    font-size: clamp(24px, 4vw, 38px);
+    line-height: 1.02;
+    
+    a {
+        text-decoration: none;
+        border-bottom: 3px solid $black;
+    }
+}
+
+.writing-card__excerpt {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #242424;
+}
+
+.writing-card__link {
+    align-self: end;
+    justify-self: start;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    border: 2px solid $black;
+    padding: 10px 14px;
+    background-color: $white;
+    font-weight: bold;
+}
+
+.writing-state {
+    min-height: 280px;
+    border-right: 2px solid $black;
+    border-bottom: 2px solid $black;
+    display: grid;
+    place-items: center;
+    padding: 40px;
+    font-size: clamp(24px, 5vw, 64px);
+    text-align: center;
+}
+
+@media screen and (max-width: 600px) {
+    .writing-card {
+        min-height: 0;
+        padding: 26px 22px 26px 58px;
+        
+        &:hover {
+            transform: none;
+            box-shadow: none;
+        }
+    }
+    
+    .writing-card__meta {
+        display: block;
+        
+        .article-tags {
+            justify-content: flex-start;
+            margin-top: 10px;
+        }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .writing-card {
+        transition: none;
+        
+        &:hover {
+            transform: none;
+        }
+    }
+}

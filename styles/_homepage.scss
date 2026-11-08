@@ -1,0 +1,165 @@
+// Homepage layout fixes.
+// Keep section navigation from pushing project cards out of view.
+.title {
+    min-height: clamp(150px, 18vw, 220px);
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+
+    h1 {
+        position: relative;
+        z-index: 1;
+        transform: none !important;
+        opacity: 1 !important;
+    }
+
+    .nav {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        align-content: center;
+        padding: 32px 20px;
+        background-color: $black;
+        overflow: hidden;
+
+        h2 {
+            font-size: clamp(26px, 3.8vw, 54px);
+            line-height: 0.95;
+            margin: 4px 0;
+        }
+
+        a {
+            max-width: 100%;
+            padding: 4px 10px;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    &:hover {
+        h1 {
+            display: inline-block;
+            visibility: hidden;
+        }
+
+        .nav {
+            display: grid !important;
+        }
+    }
+}
+
+.social {
+    .content {
+        min-height: auto;
+        padding: 0;
+    }
+}
+
+.web-links {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+
+    @media screen and (max-width: 1100px) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @media screen and (max-width: 620px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.web-link-card {
+    min-height: 220px;
+    display: grid;
+    align-content: space-between;
+    gap: 18px;
+    color: $black;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: none;
+        background-color: $yellow;
+
+        .web-link-card__label {
+            text-decoration: line-through;
+        }
+    }
+}
+
+.web-link-card__label,
+.web-link-card__handle,
+.web-link-card__note {
+    display: block;
+}
+
+.web-link-card__label {
+    width: fit-content;
+    max-width: 100%;
+    font-size: clamp(22px, 2.6vw, 34px);
+    line-height: 1;
+    font-weight: bold;
+    border-bottom: 3px solid $black;
+    overflow-wrap: anywhere;
+}
+
+.web-link-card__handle {
+    font-size: clamp(18px, 2vw, 26px);
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+}
+
+.web-link-card__note {
+    font-family: $font-mono;
+    font-size: 11px;
+    line-height: 1.35;
+    text-transform: uppercase;
+    color: $gray;
+    letter-spacing: 0.05em;
+}
+
+#projects.title {
+    min-height: 88px;
+    padding: 20px;
+
+    h1 {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        font-size: clamp(42px, 6.5vw, 86px);
+        line-height: 0.85;
+    }
+
+    &:hover {
+        h1 {
+            display: inline-block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        .nav {
+            display: none !important;
+        }
+    }
+}
+
+// Category labels are section dividers, not project cards.
+.grid__item:has(.project-category) {
+    grid-column: 1 / -1;
+    min-height: 84px;
+    display: flex;
+    align-items: center;
+    background-color: $black;
+    color: $white;
+
+    &:hover {
+        background-color: $black;
+    }
+}
+
+@media screen and (max-height: 720px) {
+    #projects.title {
+        min-height: 80px;
+    }
+
+    .grid__item:has(.project-category) {
+        min-height: 68px;
+    }
+}

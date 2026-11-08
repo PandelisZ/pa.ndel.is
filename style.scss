@@ -241,6 +241,10 @@ a {
         --offset: 50px;
     }
     
+    &#current {
+        --offset: 120px;
+    }
+    
     &#projects {
         --offset: 200px;
     }
@@ -424,6 +428,75 @@ a {
     }
 }
 
+// PERSISTENT NAV - Always-visible corner links (home has no header nav otherwise)
+.persistent-nav {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 500;
+    display: flex;
+    gap: 8px;
+
+    a {
+        padding: 8px 14px;
+        background-color: $white;
+        border: 2px solid $black;
+        color: $black;
+        font-family: $font-mono;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        text-decoration: none;
+        transition: all 0.1s ease;
+
+        &:hover {
+            background-color: $yellow;
+            text-decoration: none;
+        }
+    }
+
+    &__highlight {
+        background-color: $yellow !important;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .persistent-nav {
+        top: 10px;
+        right: 10px;
+        gap: 6px;
+
+        a {
+            padding: 6px 10px;
+            font-size: 10px;
+        }
+    }
+}
+
+// CURRENT PROJECTS - Screenshot showcase cards
+.showcase-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.showcase-card__shot {
+    display: block;
+    width: calc(100% + 60px);
+    height: 260px;
+    margin: -30px -30px 20px -30px;
+    object-fit: contain;
+    object-position: center;
+    background-color: $black;
+    border-bottom: 2px solid $black;
+    filter: grayscale(0.2) contrast(1.05);
+    transition: filter 0.15s ease;
+}
+
+.showcase-card:hover .showcase-card__shot {
+    filter: none;
+}
+
 .project--meta {
     font-family: $font-mono;
     display: flex;
@@ -597,6 +670,12 @@ form {
     
     .grid__item {
         padding: 20px;
+    }
+    
+    .showcase-card__shot {
+        width: calc(100% + 40px);
+        height: 200px;
+        margin: -20px -20px 16px -20px;
     }
 }
 
@@ -1572,3 +1651,7 @@ body.is-transitioning {
         transition: none;
     }
 }
+
+@import "./styles/transitions";
+@import "./styles/writing";
+@import "./styles/homepage";
