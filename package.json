@@ -1,6 +1,7 @@
 {
   "devDependencies": {
     "@playwright/test": "^1.59.1",
+    "blake3-wasm": "^2.1.5",
     "cssnano": "^4.1.10",
     "gh-pages": "^6.3.0",
     "sass": "^1.17.2",
@@ -10,7 +11,7 @@
     "start": "parcel index.html writing.html talks.html article.html",
     "build": "parcel build index.html writing.html talks.html article.html --out-dir dist --public-url ./ && node scripts/build-article-routes.js",
     "deploy": "npm run gh-pages",
-    "deploy:cf": "wrangler pages deploy dist",
+    "deploy:cf": "node scripts/deploy-pages.js dist",
     "gh-pages": "gh-pages -d dist -b gh-pages"
   },
   "dependencies": {
