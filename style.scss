@@ -1087,6 +1087,47 @@ body.is-transitioning {
     }
 }
 
+// ARTICLE NAV - Breadcrumb bar under the hero
+.article-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 40px;
+    font-family: $font-mono;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    background-color: $white;
+
+    .article-nav-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .nav-link {
+        color: $black;
+        text-decoration: none;
+
+        &:hover {
+            background-color: $yellow;
+        }
+    }
+
+    .nav-divider,
+    .article-slug {
+        color: $gray;
+    }
+
+    @media screen and (max-width: 900px) {
+        padding: 20px;
+    }
+}
+
 // ARTICLE CONTAINER - Main article content wrapper
 .article-container {
     max-width: 900px;
